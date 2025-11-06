@@ -5,6 +5,12 @@ import { Sidebar } from "@/components/Sidebar";
 import { HomePage } from "@/components/HomePage";
 import { MyKidsPage } from "@/components/MyKidsPage";
 import { DailyRecordsPage } from "@/components/DailyRecordsPage";
+import { HistoryPage } from "@/components/HistoryPage";
+import { ProgressPage } from "@/components/ProgressPage";
+import { JourneyPage } from "@/components/JourneyPage";
+import { SettingsPage } from "@/components/SettingsPage";
+import { SupportPage } from "@/components/SupportPage";
+import { TermsPage } from "@/components/TermsPage";
 import { Loader2 } from "lucide-react";
 
 export type Child = {
@@ -91,6 +97,18 @@ export default function Dashboard() {
             </div>
           </div>
         );
+      case "history":
+        return <HistoryPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
+      case "progress":
+        return <ProgressPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
+      case "journey":
+        return <JourneyPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
+      case "settings":
+        return <SettingsPage />;
+      case "support":
+        return <SupportPage />;
+      case "terms":
+        return <TermsPage />;
       default:
         return <HomePage childrenCount={children.length} />;
     }

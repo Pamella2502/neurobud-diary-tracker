@@ -7,13 +7,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Users, FileText, LogOut } from "lucide-react";
+import { Home, Users, FileText, History, TrendingUp, FileDown, Settings as SettingsIcon, HelpCircle, FileTextIcon, LogOut } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 
 const menuItems = [
   { id: "home", label: "Home", icon: Home },
   { id: "mykids", label: "My Kids", icon: Users },
   { id: "records", label: "Daily Records", icon: FileText },
+  { id: "history", label: "History", icon: History },
+  { id: "progress", label: "Progress", icon: TrendingUp },
+  { id: "journey", label: "Journey", icon: FileDown },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
+  { id: "support", label: "Support", icon: HelpCircle },
+  { id: "terms", label: "Terms & Policies", icon: FileTextIcon },
 ];
 
 type SidebarProps = {
