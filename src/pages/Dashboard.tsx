@@ -84,19 +84,7 @@ export default function Dashboard() {
       case "mykids":
         return <MyKidsPage onChildAdded={handleChildAdded} />;
       case "records":
-        return selectedChild ? (
-          <DailyRecordsPage child={selectedChild} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="text-6xl mb-4">👶</div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Child Selected</h3>
-              <p className="text-muted-foreground">
-                Please add a child first to start tracking records
-              </p>
-            </div>
-          </div>
-        );
+        return <DailyRecordsPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
       case "history":
         return <HistoryPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
       case "progress":
