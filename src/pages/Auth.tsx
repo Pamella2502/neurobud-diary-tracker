@@ -6,17 +6,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [timezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isLogin && !agreedToTerms) {
+      toast({
+        title: "Terms Required",
+        description: "You MUST read and agree to the Terms & Privacy Policy to create an account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -29,14 +50,38 @@ export default function Auth() {
         navigate("/");
       } else {
         const redirectUrl = `${window.location.origin}/`;
-        const { error } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: redirectUrl,
+            data: {
+              timezone,
+              agreed_to_terms: true,
+              terms_agreed_at: new Date().toISOString(),
+              terms_version: "1.0",
+            },
           },
         });
-        if (error) throw error;
+
+        if (authError) throw authError;
+
+        if (authData.user) {
+          const { error: userError } = await supabase.from("users").insert([
+            {
+              id: authData.user.id,
+              email: authData.user.email!,
+              timezone: timezone,
+              agreed_to_terms: true,
+              terms_agreed_at: new Date().toISOString(),
+              terms_version: "1.0",
+              subscription_status: "trial",
+            },
+          ]);
+
+          if (userError) throw userError;
+        }
+
         toast({
           title: "Account created!",
           description: "Please check your email to verify your account.",
@@ -68,6 +113,101 @@ export default function Auth() {
       });
     }
   };
+
+  const TermsModal = () => (
+    <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Terms & Privacy Policy</DialogTitle>
+        </DialogHeader>
+
+        <div className="prose prose-sm max-w-none">
+          <Alert className="mb-6">
+            <AlertDescription>
+              <strong>Important:</strong> By creating an account, you agree to our Terms of Service and Privacy Policy.
+              Please read carefully before proceeding.
+            </AlertDescription>
+          </Alert>
+
+          <h3>📄 Terms of Service</h3>
+          <p>
+            <strong>Last Updated:</strong> {new Date().toLocaleDateString()}
+          </p>
+
+          <h4>1. Acceptance of Terms</h4>
+          <p>
+            By accessing and using NeuroBud Autism Diary ("Service"), you agree to comply with these Terms of Service
+            and our Privacy Policy.
+          </p>
+
+          <h4>2. Service Description</h4>
+          <p>
+            NeuroBud Autism Diary is a microSaaS developed for parents and legal guardians of autistic children in the
+            United States.
+          </p>
+
+          <h4>3. Subscription & Billing</h4>
+          <p>
+            <strong>Free Trial:</strong> 3-day free trial with automatic conversion to paid plan ($19.99/month) on the
+            4th day.
+          </p>
+          <p>
+            <strong>Cancellation:</strong> You may cancel before trial ends. No refunds for partial periods.
+          </p>
+
+          <h4>4. Data Privacy</h4>
+          <p>Your data is encrypted and never shared with third parties. We implement industry-standard security measures.</p>
+
+          <h3>🔒 Privacy Policy</h3>
+
+          <h4>1. Information Collected</h4>
+          <p>We collect only necessary information for service operation:</p>
+          <ul>
+            <li>Parent/guardian email and timezone</li>
+            <li>Child's name and age</li>
+            <li>Behavioral records (sleep, mood, nutrition, etc.)</li>
+          </ul>
+
+          <h4>2. Data Usage</h4>
+          <p>Your data is used solely to:</p>
+          <ul>
+            <li>Operate and maintain the Service</li>
+            <li>Generate progress reports and analytics</li>
+            <li>Provide customer support</li>
+          </ul>
+
+          <h4>3. Data Security</h4>
+          <p>All data is encrypted in transit and at rest. Servers are located in the United States.</p>
+
+          <Alert variant="destructive" className="mt-6">
+            <AlertDescription>
+              <h4 className="font-semibold mb-2">⚠️ Important Medical Disclaimer</h4>
+              <p className="text-sm">
+                NeuroBud Autism Diary is NOT a medical device and does NOT provide medical advice, diagnosis, or
+                treatment. Always consult healthcare professionals for medical decisions. We do not monitor or remind
+                about medications.
+              </p>
+            </AlertDescription>
+          </Alert>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <p className="text-sm">
+              <strong>By checking the agreement box, you confirm that:</strong>
+              <br />
+              • You have read and understood these Terms & Privacy Policy
+              <br />
+              • You agree to be bound by these terms
+              <br />
+              • You are at least 18 years old
+              <br />
+              • You are a parent/guardian of an autistic child
+              <br />• You reside in the United States
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -108,13 +248,68 @@ export default function Auth() {
                 name="password"
                 type="password"
                 required
+                minLength={6}
                 className="mt-1"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password (min. 6 characters)"
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            {!isLogin && (
+              <>
+                <div>
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <Input
+                    id="timezone"
+                    name="timezone"
+                    type="text"
+                    readOnly
+                    className="mt-1 bg-muted cursor-not-allowed"
+                    value={timezone}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Detected automatically. This ensures accurate daily record tracking.
+                  </p>
+                </div>
+
+                <Alert className="border-accent/20 bg-accent/10">
+                  <AlertDescription>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="agree-terms"
+                        checked={agreedToTerms}
+                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                        className="mt-1"
+                      />
+                      <label htmlFor="agree-terms" className="block text-sm text-foreground cursor-pointer">
+                        <span className="font-semibold">I HAVE READ AND AGREE TO THE TERMS & PRIVACY POLICY</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowTermsModal(true)}
+                          className="ml-1 text-primary hover:text-primary-hover underline"
+                        >
+                          (click to read)
+                        </button>
+                        <p className="text-destructive text-xs mt-1 font-semibold">
+                          ✓ Required to create account - This protects both you and us legally
+                        </p>
+                      </label>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                <Alert variant="destructive">
+                  <AlertDescription className="text-xs">
+                    <strong>Legal Acknowledgement:</strong> By checking this box, you confirm you have read,
+                    understood, and voluntarily agree to be bound by all terms and conditions. This constitutes a
+                    legally binding "Clickwrap Agreement".
+                  </AlertDescription>
+                </Alert>
+              </>
+            )}
+
+            <Button type="submit" className="w-full" disabled={loading || (!isLogin && !agreedToTerms)}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLogin ? "Sign in" : "Create account"}
             </Button>
@@ -175,6 +370,8 @@ export default function Auth() {
           </div>
         </div>
       </div>
+
+      <TermsModal />
     </div>
   );
 }

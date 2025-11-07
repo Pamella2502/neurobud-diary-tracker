@@ -103,6 +103,42 @@ export type Database = {
           },
         ]
       }
+      users: {
+        Row: {
+          agreed_to_terms: boolean
+          created_at: string
+          email: string
+          id: string
+          subscription_status: string
+          terms_agreed_at: string | null
+          terms_version: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_to_terms?: boolean
+          created_at?: string
+          email: string
+          id: string
+          subscription_status?: string
+          terms_agreed_at?: string | null
+          terms_version?: string | null
+          timezone: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_to_terms?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          subscription_status?: string
+          terms_agreed_at?: string | null
+          terms_version?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
