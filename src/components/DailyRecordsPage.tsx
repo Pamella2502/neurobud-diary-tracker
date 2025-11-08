@@ -34,6 +34,37 @@ type ActivityEntry = {
   details: string;
 };
 
+type CrisisEntry = {
+  id: number;
+  type: string;
+  customType: string;
+  intensity: string;
+  duration: string;
+  triggers: string[];
+  customTrigger: string;
+  strategies: string[];
+  notes: string;
+};
+
+type IncidentEntry = {
+  id: number;
+  type: string;
+  customType: string;
+  consequences: string[];
+  notes: string;
+};
+
+type HyperfocusEntry = {
+  id: number;
+  occurred: string;
+  topic: string;
+  intensity: string;
+  impact: string;
+  notes: string;
+};
+
+type Period = "morning" | "afternoon" | "evening";
+
 type RecordsState = {
   sleep: {
     quality: string;
@@ -69,6 +100,24 @@ type RecordsState = {
     morning: ActivityEntry[];
     afternoon: ActivityEntry[];
     evening: ActivityEntry[];
+    notes: string;
+  };
+  crises: {
+    morning: CrisisEntry[];
+    afternoon: CrisisEntry[];
+    evening: CrisisEntry[];
+    notes: string;
+  };
+  incidents: {
+    morning: IncidentEntry[];
+    afternoon: IncidentEntry[];
+    evening: IncidentEntry[];
+    notes: string;
+  };
+  hyperfocus: {
+    morning: HyperfocusEntry[];
+    afternoon: HyperfocusEntry[];
+    evening: HyperfocusEntry[];
     notes: string;
   };
   extraNotes: string;
@@ -112,6 +161,24 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
       evening: [],
       notes: "",
     },
+    crises: {
+      morning: [],
+      afternoon: [],
+      evening: [],
+      notes: "",
+    },
+    incidents: {
+      morning: [],
+      afternoon: [],
+      evening: [],
+      notes: "",
+    },
+    hyperfocus: {
+      morning: [],
+      afternoon: [],
+      evening: [],
+      notes: "",
+    },
     extraNotes: "",
   });
   const [saving, setSaving] = useState(false);
@@ -140,6 +207,36 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     "Psychotherapy",
     "Physiotherapy/Motor Skills",
     "Recreation/Physical Exercise",
+    "None",
+    "Other Type",
+  ];
+  const crisisTypes = [
+    "Meltdown",
+    "Shutdown",
+    "Emotional",
+    "Behavioral",
+    "Sensory",
+    "Social Anxiety",
+    "None",
+    "Other Type",
+  ];
+  const triggerTypes = [
+    "Sensory",
+    "Routine/Time",
+    "Physical",
+    "Emotional/Psychological",
+    "Social",
+    "Environment",
+    "Not identified",
+    "Other type",
+  ];
+  const incidentTypes = [
+    "Routine change",
+    "Excessive noise",
+    "Crowded environment",
+    "Visitors or strangers",
+    "Illness or discomfort",
+    "Activity cancellation",
     "None",
     "Other Type",
   ];
@@ -174,6 +271,9 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
         nutrition: (data.nutrition_data as any) || records.nutrition,
         medication: (data.medication_data as any) || records.medication,
         activities: (data.activity_data as any) || records.activities,
+        crises: (data.crisis_data as any) || records.crises,
+        incidents: (data.incident_data as any) || records.incidents,
+        hyperfocus: (data.hyperfocus_data as any) || records.hyperfocus,
         extraNotes: data.extra_notes || "",
       });
     }
@@ -205,6 +305,9 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
         nutrition_data: records.nutrition,
         medication_data: records.medication,
         activity_data: records.activities,
+        crisis_data: records.crises,
+        incident_data: records.incidents,
+        hyperfocus_data: records.hyperfocus,
         extra_notes: records.extraNotes,
       },
       {
@@ -227,7 +330,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     setSaving(false);
   };
 
-  const addMedication = (period: "morning" | "afternoon" | "evening") => {
+  const addMedication = (period: Period) => {
     const newMedication: MedicationEntry = {
       id: Date.now() + Math.random(),
       type: "",
@@ -245,12 +348,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }));
   };
 
-  const updateMedication = (
-    period: "morning" | "afternoon" | "evening",
-    index: number,
-    field: keyof MedicationEntry,
-    value: string
-  ) => {
+  const updateMedication = (period: Period, index: number, field: keyof MedicationEntry, value: string) => {
     setRecords((prev) => ({
       ...prev,
       medication: {
@@ -260,7 +358,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }));
   };
 
-  const removeMedication = (period: "morning" | "afternoon" | "evening", index: number) => {
+  const removeMedication = (period: Period, index: number) => {
     setRecords((prev) => ({
       ...prev,
       medication: {
@@ -270,7 +368,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }));
   };
 
-  const addActivity = (period: "morning" | "afternoon" | "evening") => {
+  const addActivity = (period: Period) => {
     const newActivity: ActivityEntry = {
       id: Date.now() + Math.random(),
       type: "",
@@ -286,12 +384,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }));
   };
 
-  const updateActivity = (
-    period: "morning" | "afternoon" | "evening",
-    index: number,
-    field: keyof ActivityEntry,
-    value: string
-  ) => {
+  const updateActivity = (period: Period, index: number, field: keyof ActivityEntry, value: string) => {
     setRecords((prev) => ({
       ...prev,
       activities: {
@@ -301,7 +394,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }));
   };
 
-  const removeActivity = (period: "morning" | "afternoon" | "evening", index: number) => {
+  const removeActivity = (period: Period, index: number) => {
     setRecords((prev) => ({
       ...prev,
       activities: {
@@ -309,6 +402,174 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
         [period]: prev.activities[period].filter((_, i) => i !== index),
       },
     }));
+  };
+
+  // Crisis functions
+  const addCrisis = (period: Period) => {
+    const newCrisis: CrisisEntry = {
+      id: Date.now() + Math.random(),
+      type: "",
+      customType: "",
+      intensity: "",
+      duration: "",
+      triggers: [],
+      customTrigger: "",
+      strategies: [],
+      notes: "",
+    };
+    setRecords((prev) => ({
+      ...prev,
+      crises: {
+        ...prev.crises,
+        [period]: [...prev.crises[period], newCrisis],
+      },
+    }));
+  };
+
+  const updateCrisis = (period: Period, index: number, field: string, value: any) => {
+    setRecords((prev) => ({
+      ...prev,
+      crises: {
+        ...prev.crises,
+        [period]: prev.crises[period].map((crisis, i) => (i === index ? { ...crisis, [field]: value } : crisis)),
+      },
+    }));
+  };
+
+  const removeCrisis = (period: Period, index: number) => {
+    setRecords((prev) => ({
+      ...prev,
+      crises: {
+        ...prev.crises,
+        [period]: prev.crises[period].filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  // Incident functions
+  const addIncident = (period: Period) => {
+    const newIncident: IncidentEntry = {
+      id: Date.now() + Math.random(),
+      type: "",
+      customType: "",
+      consequences: [],
+      notes: "",
+    };
+    setRecords((prev) => ({
+      ...prev,
+      incidents: {
+        ...prev.incidents,
+        [period]: [...prev.incidents[period], newIncident],
+      },
+    }));
+  };
+
+  const updateIncident = (period: Period, index: number, field: string, value: any) => {
+    setRecords((prev) => ({
+      ...prev,
+      incidents: {
+        ...prev.incidents,
+        [period]: prev.incidents[period].map((incident, i) => (i === index ? { ...incident, [field]: value } : incident)),
+      },
+    }));
+  };
+
+  const removeIncident = (period: Period, index: number) => {
+    setRecords((prev) => ({
+      ...prev,
+      incidents: {
+        ...prev.incidents,
+        [period]: prev.incidents[period].filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  // Hyperfocus functions
+  const addHyperfocus = (period: Period) => {
+    const newHyperfocus: HyperfocusEntry = {
+      id: Date.now() + Math.random(),
+      occurred: "",
+      topic: "",
+      intensity: "",
+      impact: "",
+      notes: "",
+    };
+    setRecords((prev) => ({
+      ...prev,
+      hyperfocus: {
+        ...prev.hyperfocus,
+        [period]: [...prev.hyperfocus[period], newHyperfocus],
+      },
+    }));
+  };
+
+  const updateHyperfocus = (period: Period, index: number, field: string, value: any) => {
+    setRecords((prev) => ({
+      ...prev,
+      hyperfocus: {
+        ...prev.hyperfocus,
+        [period]: prev.hyperfocus[period].map((hf, i) => (i === index ? { ...hf, [field]: value } : hf)),
+      },
+    }));
+  };
+
+  const removeHyperfocus = (period: Period, index: number) => {
+    setRecords((prev) => ({
+      ...prev,
+      hyperfocus: {
+        ...prev.hyperfocus,
+        [period]: prev.hyperfocus[period].filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  // Helper function for activity subtypes
+  const getActivitySubtypes = (activityType: string): string[] => {
+    const subtypes: Record<string, string[]> = {
+      "ABA Therapy": [
+        "Social skills training",
+        "Functional communication training",
+        "Self-control training",
+        "Visual/auditory discrimination training",
+        "Positive reinforcement / Motivational activity",
+      ],
+      "Occupational Therapy": [
+        "Fine motor coordination (buttons, puzzles)",
+        "Gross motor coordination (jumping, stairs)",
+        "Daily living skills (dressing, hygiene)",
+        "Sensory training (textures, weight, proprioception)",
+        "Motor planning / Task sequencing",
+      ],
+      "Speech Therapy": [
+        "Articulation exercises (specific sounds)",
+        "Receptive language training (comprehension)",
+        "Expressive language training (speech)",
+        "Rhythm and intonation exercises",
+        "Breathing and swallowing training",
+      ],
+      "Psychotherapy": [
+        "Emotional regulation activities",
+        "Self-awareness and feeling identification training",
+        "Therapeutic games",
+        "Relaxation / breathing techniques",
+        "Coping strategies (coping skills)",
+      ],
+      "Physiotherapy/Motor Skills": [
+        "Joint stretching and mobility",
+        "Muscle strengthening",
+        "Balance and motor coordination",
+        "Gait and posture",
+        "Breathing exercises",
+      ],
+      "Recreation/Physical Exercise": [
+        "Running/jumping/outdoor games",
+        "Dance or rhythm",
+        "Ball / light sports",
+        "Motor activity circuit",
+        "Sensory play activities (water, sand, playdough)",
+      ],
+    };
+    return subtypes[activityType] || [];
   };
 
   if (loading) {
@@ -838,7 +1099,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label>Type</Label>
+                            <Label>Activity Type</Label>
                             <Select
                               value={activity.type}
                               onValueChange={(value) => updateActivity(period, index, "type", value)}
@@ -856,22 +1117,45 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                             </Select>
                           </div>
 
-                          <div>
-                            <Label>Subtype</Label>
-                            <Input
-                              className="mt-1"
-                              placeholder="Activity subtype"
-                              value={activity.subtype}
-                              onChange={(e) => updateActivity(period, index, "subtype", e.target.value)}
-                            />
-                          </div>
+                          {activity.type && activity.type !== "None" && activity.type !== "Other Type" && (
+                            <div>
+                              <Label>Specific Activity</Label>
+                              <Select
+                                value={activity.subtype}
+                                onValueChange={(value) => updateActivity(period, index, "subtype", value)}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Select specific activity" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getActivitySubtypes(activity.type).map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                      {option}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          {activity.type === "Other Type" && (
+                            <div>
+                              <Label>Specify Activity Type</Label>
+                              <Input
+                                className="mt-1"
+                                placeholder="Describe the activity type..."
+                                value={activity.subtype}
+                                onChange={(e) => updateActivity(period, index, "subtype", e.target.value)}
+                              />
+                            </div>
+                          )}
 
                           <div className="md:col-span-2">
-                            <Label>Details</Label>
+                            <Label>Activity Details & Notes</Label>
                             <Textarea
                               className="mt-1"
-                              rows={2}
-                              placeholder="Activity details..."
+                              rows={3}
+                              placeholder="Details about the activity, duration, response, etc."
                               value={activity.details}
                               onChange={(e) => updateActivity(period, index, "details", e.target.value)}
                             />
@@ -889,14 +1173,476 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                 ))}
 
                 <div>
-                  <Label>Activity Notes</Label>
+                  <Label>General Activity Notes</Label>
                   <Textarea
                     className="mt-1"
                     rows={3}
-                    placeholder="General activity notes..."
+                    placeholder="Overall activity notes and observations..."
                     value={records.activities.notes}
                     onChange={(e) =>
                       setRecords((prev) => ({ ...prev, activities: { ...prev.activities, notes: e.target.value } }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Crises Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>🚨 Crises</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {(["morning", "afternoon", "evening"] as Period[]).map((period) => (
+                  <div key={period}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-foreground capitalize">{period}</h4>
+                      <Button type="button" size="sm" onClick={() => addCrisis(period)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Crisis
+                      </Button>
+                    </div>
+
+                    {records.crises[period].map((crisis, index) => (
+                      <div key={crisis.id} className="border rounded-lg p-4 mb-3">
+                        <div className="flex justify-between items-start mb-3">
+                          <h5 className="font-medium text-muted-foreground">Crisis #{index + 1}</h5>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCrisis(period, index)}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Crisis Type</Label>
+                            <Select
+                              value={crisis.type}
+                              onValueChange={(value) => updateCrisis(period, index, "type", value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {crisisTypes.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {crisis.type === "Other Type" && (
+                            <div>
+                              <Label>Specify Crisis Type</Label>
+                              <Input
+                                className="mt-1"
+                                placeholder="Describe the crisis type..."
+                                value={crisis.customType}
+                                onChange={(e) => updateCrisis(period, index, "customType", e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <Label>Intensity</Label>
+                            <Select
+                              value={crisis.intensity}
+                              onValueChange={(value) => updateCrisis(period, index, "intensity", value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select intensity" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Mild">Mild</SelectItem>
+                                <SelectItem value="Moderate">Moderate</SelectItem>
+                                <SelectItem value="Intense">Intense</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Duration (minutes)</Label>
+                            <Input
+                              type="number"
+                              className="mt-1"
+                              placeholder="e.g., 30"
+                              value={crisis.duration}
+                              onChange={(e) => updateCrisis(period, index, "duration", e.target.value)}
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <Label>Triggers</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                              {triggerTypes.map((trigger) => (
+                                <div key={trigger} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${period}-crisis-${index}-trigger-${trigger}`}
+                                    checked={crisis.triggers?.includes(trigger) || false}
+                                    onCheckedChange={(checked) => {
+                                      const currentTriggers = crisis.triggers || [];
+                                      const newTriggers = checked
+                                        ? [...currentTriggers, trigger]
+                                        : currentTriggers.filter((t) => t !== trigger);
+                                      updateCrisis(period, index, "triggers", newTriggers);
+                                    }}
+                                  />
+                                  <Label htmlFor={`${period}-crisis-${index}-trigger-${trigger}`} className="text-sm cursor-pointer">
+                                    {trigger}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {crisis.triggers?.includes("Other type") && (
+                            <div className="md:col-span-2">
+                              <Label>Specify Other Trigger</Label>
+                              <Input
+                                className="mt-1"
+                                placeholder="Describe the trigger..."
+                                value={crisis.customTrigger}
+                                onChange={(e) => updateCrisis(period, index, "customTrigger", e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          <div className="md:col-span-2">
+                            <Label>Calming Strategies</Label>
+                            <div className="space-y-2 mt-2">
+                              {[
+                                "Breathing technique",
+                                "Comfort object",
+                                "Alone time",
+                                "Physical contact",
+                                "Music or visual stimulus",
+                                "Reduced stimuli",
+                                "Nothing worked",
+                                "Other type",
+                              ].map((strategy) => (
+                                <div key={strategy} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${period}-crisis-${index}-strategy-${strategy}`}
+                                    checked={crisis.strategies?.includes(strategy) || false}
+                                    onCheckedChange={(checked) => {
+                                      const currentStrategies = crisis.strategies || [];
+                                      const newStrategies = checked
+                                        ? [...currentStrategies, strategy]
+                                        : currentStrategies.filter((s) => s !== strategy);
+                                      updateCrisis(period, index, "strategies", newStrategies);
+                                    }}
+                                  />
+                                  <Label htmlFor={`${period}-crisis-${index}-strategy-${strategy}`} className="text-sm cursor-pointer">
+                                    {strategy}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <Label>Crisis Notes</Label>
+                            <Textarea
+                              className="mt-1"
+                              rows={3}
+                              placeholder="Detailed notes about the crisis..."
+                              value={crisis.notes}
+                              onChange={(e) => updateCrisis(period, index, "notes", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {records.crises[period].length === 0 && (
+                      <p className="text-muted-foreground text-sm text-center py-4">No crises recorded for {period}</p>
+                    )}
+                  </div>
+                ))}
+
+                <div>
+                  <Label>General Crisis Notes</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Overall crisis patterns and observations..."
+                    value={records.crises.notes}
+                    onChange={(e) =>
+                      setRecords((prev) => ({ ...prev, crises: { ...prev.crises, notes: e.target.value } }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Unexpected Occurrences Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>🔄 Unexpected Occurrences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {(["morning", "afternoon", "evening"] as Period[]).map((period) => (
+                  <div key={period}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-foreground capitalize">{period}</h4>
+                      <Button type="button" size="sm" onClick={() => addIncident(period)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Occurrence
+                      </Button>
+                    </div>
+
+                    {records.incidents[period].map((incident, index) => (
+                      <div key={incident.id} className="border rounded-lg p-4 mb-3">
+                        <div className="flex justify-between items-start mb-3">
+                          <h5 className="font-medium text-muted-foreground">Occurrence #{index + 1}</h5>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeIncident(period, index)}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Occurrence Type</Label>
+                            <Select
+                              value={incident.type}
+                              onValueChange={(value) => updateIncident(period, index, "type", value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {incidentTypes.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {incident.type === "Other Type" && (
+                            <div>
+                              <Label>Specify Occurrence Type</Label>
+                              <Input
+                                className="mt-1"
+                                placeholder="Describe the occurrence..."
+                                value={incident.customType}
+                                onChange={(e) => updateIncident(period, index, "customType", e.target.value)}
+                              />
+                            </div>
+                          )}
+
+                          <div className="md:col-span-2">
+                            <Label>Consequences</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                              {[
+                                "Mood change",
+                                "Increased anxiety",
+                                "Triggered crisis",
+                                "Activity refusal",
+                                "Appetite change",
+                                "Sleep change",
+                                "Communication difficulty",
+                                "Isolation",
+                                "Regressive behavior",
+                                "None",
+                                "Other type",
+                              ].map((consequence) => (
+                                <div key={consequence} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${period}-incident-${index}-consequence-${consequence}`}
+                                    checked={incident.consequences?.includes(consequence) || false}
+                                    onCheckedChange={(checked) => {
+                                      const currentConsequences = incident.consequences || [];
+                                      const newConsequences = checked
+                                        ? [...currentConsequences, consequence]
+                                        : currentConsequences.filter((c) => c !== consequence);
+                                      updateIncident(period, index, "consequences", newConsequences);
+                                    }}
+                                  />
+                                  <Label htmlFor={`${period}-incident-${index}-consequence-${consequence}`} className="text-sm cursor-pointer">
+                                    {consequence}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <Label>Occurrence Notes</Label>
+                            <Textarea
+                              className="mt-1"
+                              rows={3}
+                              placeholder="Details about the occurrence and impact..."
+                              value={incident.notes}
+                              onChange={(e) => updateIncident(period, index, "notes", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {records.incidents[period].length === 0 && (
+                      <p className="text-muted-foreground text-sm text-center py-4">
+                        No occurrences recorded for {period}
+                      </p>
+                    )}
+                  </div>
+                ))}
+
+                <div>
+                  <Label>General Occurrence Notes</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Overall patterns and observations about unexpected occurrences..."
+                    value={records.incidents.notes}
+                    onChange={(e) =>
+                      setRecords((prev) => ({ ...prev, incidents: { ...prev.incidents, notes: e.target.value } }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Hyperfocus Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>🎯 Hyperfocus</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {(["morning", "afternoon", "evening"] as Period[]).map((period) => (
+                  <div key={period}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-foreground capitalize">{period}</h4>
+                      <Button type="button" size="sm" onClick={() => addHyperfocus(period)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Hyperfocus
+                      </Button>
+                    </div>
+
+                    {records.hyperfocus[period].map((hyperfocus, index) => (
+                      <div key={hyperfocus.id} className="border rounded-lg p-4 mb-3">
+                        <div className="flex justify-between items-start mb-3">
+                          <h5 className="font-medium text-muted-foreground">Hyperfocus #{index + 1}</h5>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeHyperfocus(period, index)}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Hyperfocus Occurred?</Label>
+                            <Select
+                              value={hyperfocus.occurred}
+                              onValueChange={(value) => updateHyperfocus(period, index, "occurred", value)}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Yes">Yes</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {hyperfocus.occurred === "Yes" && (
+                            <>
+                              <div>
+                                <Label>Hyperfocus Topic</Label>
+                                <Input
+                                  className="mt-1"
+                                  placeholder="What was the focus topic?"
+                                  value={hyperfocus.topic}
+                                  onChange={(e) => updateHyperfocus(period, index, "topic", e.target.value)}
+                                />
+                              </div>
+
+                              <div>
+                                <Label>Intensity</Label>
+                                <Select
+                                  value={hyperfocus.intensity}
+                                  onValueChange={(value) => updateHyperfocus(period, index, "intensity", value)}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select intensity" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Mild">Mild</SelectItem>
+                                    <SelectItem value="Moderate">Moderate</SelectItem>
+                                    <SelectItem value="Intense">Intense</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label>Impact</Label>
+                                <Select
+                                  value={hyperfocus.impact}
+                                  onValueChange={(value) => updateHyperfocus(period, index, "impact", value)}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select impact" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Positive">Positive</SelectItem>
+                                    <SelectItem value="Neutral">Neutral</SelectItem>
+                                    <SelectItem value="Challenging">Challenging</SelectItem>
+                                    <SelectItem value="Negative">Negative</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </>
+                          )}
+
+                          <div className="md:col-span-2">
+                            <Label>Hyperfocus Notes</Label>
+                            <Textarea
+                              className="mt-1"
+                              rows={3}
+                              placeholder="Details about the hyperfocus experience..."
+                              value={hyperfocus.notes}
+                              onChange={(e) => updateHyperfocus(period, index, "notes", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {records.hyperfocus[period].length === 0 && (
+                      <p className="text-muted-foreground text-sm text-center py-4">
+                        No hyperfocus recorded for {period}
+                      </p>
+                    )}
+                  </div>
+                ))}
+
+                <div>
+                  <Label>General Hyperfocus Notes</Label>
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Overall hyperfocus patterns and observations..."
+                    value={records.hyperfocus.notes}
+                    onChange={(e) =>
+                      setRecords((prev) => ({ ...prev, hyperfocus: { ...prev.hyperfocus, notes: e.target.value } }))
                     }
                   />
                 </div>
