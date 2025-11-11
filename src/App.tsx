@@ -20,6 +20,24 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUserProfile(null);
+        
+        // Defer Supabase calls with setTimeout to prevent deadlock
+        if (session) {
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
@@ -29,28 +47,29 @@ const App = () => {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session) {
-        await fetchUserProfile(session.user.id);
-      } else {
-        setUserProfile(null);
-        setLoading(false);
-      }
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
-    const { data, error } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
-    if (error) {
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        setUserProfile(null);
+      } else {
+        setUserProfile(data);
+      }
+    } catch (error) {
       console.error("Error fetching user profile:", error);
-    } else {
-      setUserProfile(data);
+      setUserProfile(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (loading) {
