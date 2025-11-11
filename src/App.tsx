@@ -20,13 +20,38 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        setSession(session);
+        
+        if (session) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUserProfile(null);
         
-        // Defer Supabase calls with setTimeout to prevent deadlock
         if (session) {
           setTimeout(() => {
             fetchUserProfile(session.user.id);
@@ -37,17 +62,10 @@ const App = () => {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -60,13 +78,29 @@ const App = () => {
 
       if (error) {
         console.error("Error fetching user profile:", error);
-        setUserProfile(null);
+        // Se não houver perfil, criar um automaticamente
+        if (error.code === 'PGRST116') {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { data: newProfile } = await supabase
+              .from("users")
+              .insert({
+                id: userId,
+                email: session.user.email || '',
+                timezone: 'America/Sao_Paulo',
+                agreed_to_terms: false
+              })
+              .select()
+              .single();
+            
+            setUserProfile(newProfile);
+          }
+        }
       } else {
         setUserProfile(data);
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
-      setUserProfile(null);
+      console.error("Unexpected error fetching user profile:", error);
     } finally {
       setLoading(false);
     }
