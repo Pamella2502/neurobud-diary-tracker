@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
+import neurobudLogo from "@/assets/neurobud-logo.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -39,9 +40,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-card">
-                <span className="text-white font-bold text-xl">N</span>
-              </div>
+              <img src={neurobudLogo} alt="NeuroBud Logo" className="w-12 h-12 rounded-2xl shadow-card" />
               <span className="ml-3 text-2xl font-bold text-foreground">NeuroBud</span>
             </div>
             <Button onClick={() => navigate("/auth")} className="shadow-soft">
