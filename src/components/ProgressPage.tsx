@@ -1,12 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { TrendingUp } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DateRangeFilter } from "./progress/DateRangeFilter";
+import { SleepAnalytics } from "./progress/SleepAnalytics";
+import { MoodAnalytics } from "./progress/MoodAnalytics";
+import { NutritionAnalytics } from "./progress/NutritionAnalytics";
+import { CrisisAnalytics } from "./progress/CrisisAnalytics";
+import { HyperfocusAnalytics } from "./progress/HyperfocusAnalytics";
+import { OverallProgress } from "./progress/OverallProgress";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 
 type ProgressPageProps = {
   children: Child[];
@@ -19,29 +24,77 @@ type DailyRecord = {
   sleep_data: any;
   mood_data: any;
   nutrition_data: any;
+  medication_data: any;
   activity_data: any;
+  crisis_data: any;
+  hyperfocus_data: any;
 };
 
 export function ProgressPage({ children, selectedChild, onSelectChild }: ProgressPageProps) {
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('week');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
 
   useEffect(() => {
     if (selectedChild) {
       fetchRecords();
     }
-  }, [selectedChild]);
+  }, [selectedChild, filterType, selectedDate, customStartDate, customEndDate]);
+
+  const getDateRange = () => {
+    if (filterType === 'custom' && customStartDate && customEndDate) {
+      return {
+        start: customStartDate.toISOString().split('T')[0],
+        end: customEndDate.toISOString().split('T')[0],
+      };
+    }
+
+    const today = selectedDate;
+    let start: Date, end: Date;
+
+    switch (filterType) {
+      case 'day':
+        start = end = today;
+        break;
+      case 'week':
+        start = startOfWeek(today);
+        end = endOfWeek(today);
+        break;
+      case 'month':
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+        break;
+      case 'year':
+        start = startOfYear(today);
+        end = endOfYear(today);
+        break;
+      default:
+        start = startOfWeek(today);
+        end = endOfWeek(today);
+    }
+
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0],
+    };
+  };
 
   const fetchRecords = async () => {
     if (!selectedChild) return;
     
     setLoading(true);
+    const { start, end } = getDateRange();
+    
     const { data, error } = await supabase
       .from("daily_records")
-      .select("record_date, sleep_data, mood_data, nutrition_data, activity_data")
+      .select("*")
       .eq("child_id", selectedChild.id)
-      .order("record_date", { ascending: true })
-      .limit(30);
+      .gte("record_date", start)
+      .lte("record_date", end)
+      .order("record_date", { ascending: true });
 
     if (!error && data) {
       setRecords(data);
@@ -49,70 +102,6 @@ export function ProgressPage({ children, selectedChild, onSelectChild }: Progres
     setLoading(false);
   };
 
-  const getSleepChartData = () => {
-    return records.map(record => ({
-      date: new Date(record.record_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      hours: record.sleep_data?.hours || 0,
-    })).slice(-7);
-  };
-
-  const getMoodChartData = () => {
-    const moodValues: { [key: string]: number } = {
-      'very-happy': 5,
-      'happy': 4,
-      'neutral': 3,
-      'sad': 2,
-      'very-sad': 1
-    };
-    return records.map(record => ({
-      date: new Date(record.record_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      score: moodValues[record.mood_data?.overall as string] || 3,
-    })).slice(-7);
-  };
-
-  const getMealsChartData = () => {
-    return records.map(record => ({
-      date: new Date(record.record_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      meals: (record.nutrition_data?.meals || []).length,
-    })).slice(-7);
-  };
-
-  const getActivitiesChartData = () => {
-    return records.map(record => ({
-      date: new Date(record.record_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      activities: (record.activity_data?.activities || []).length,
-    })).slice(-7);
-  };
-
-  const calculateSleepConsistency = () => {
-    if (records.length === 0) return 0;
-    const sleepHours = records.map(r => r.sleep_data?.hours || 0).filter(h => h > 0);
-    if (sleepHours.length === 0) return 0;
-    const avg = sleepHours.reduce((a, b) => a + b, 0) / sleepHours.length;
-    return Math.min(100, Math.round((avg / 10) * 100));
-  };
-
-  const calculateMoodStability = () => {
-    if (records.length === 0) return 0;
-    const moods = records.map(r => r.mood_data?.overall).filter(Boolean);
-    if (moods.length === 0) return 0;
-    const happyMoods = moods.filter(m => m === 'happy' || m === 'very-happy').length;
-    return Math.round((happyMoods / moods.length) * 100);
-  };
-
-  const calculateNutritionQuality = () => {
-    if (records.length === 0) return 0;
-    const meals = records.map(r => (r.nutrition_data?.meals || []).length).filter(m => m > 0);
-    if (meals.length === 0) return 0;
-    const avg = meals.reduce((a, b) => a + b, 0) / meals.length;
-    return Math.min(100, Math.round((avg / 5) * 100));
-  };
-
-  const chartConfig = {
-    primary: {
-      color: "hsl(var(--primary))",
-    },
-  };
 
   if (!selectedChild) {
     return (
@@ -128,202 +117,100 @@ export function ProgressPage({ children, selectedChild, onSelectChild }: Progres
 
   return (
     <div className="p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Progress Analytics</h1>
-            <p className="text-muted-foreground">Track {selectedChild.name}'s development over time</p>
+            <p className="text-muted-foreground">Comprehensive insights into {selectedChild.name}'s development</p>
           </div>
 
-          <Select
-            value={selectedChild?.id || ""}
-            onValueChange={(value) => {
-              const child = children.find((c) => c.id === value);
-              if (child) onSelectChild(child);
-            }}
-          >
-            <SelectTrigger className="mt-4 sm:mt-0 w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {children.map((child) => (
-                <SelectItem key={child.id} value={child.id}>
-                  {child.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <DateRangeFilter
+              filterType={filterType}
+              onFilterTypeChange={setFilterType}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              customStartDate={customStartDate}
+              customEndDate={customEndDate}
+              onCustomRangeChange={(start, end) => {
+                setCustomStartDate(start);
+                setCustomEndDate(end);
+              }}
+            />
+            
+            <Select
+              value={selectedChild?.id || ""}
+              onValueChange={(value) => {
+                const child = children.find((c) => c.id === value);
+                if (child) onSelectChild(child);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {children.map((child) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Sleep Progress */}
-          <Card className="shadow-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span className="mr-2">😴</span> Sleep Quality
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              ) : getSleepChartData().length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={getSleepChartData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="hours" stroke="hsl(var(--primary))" strokeWidth={2} name="Horas" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <div className="text-5xl mb-3">📈</div>
-                  <p className="text-muted-foreground font-medium">Nenhum dado de sono registrado</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="overall" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
+            <TabsTrigger value="overall">Overview</TabsTrigger>
+            <TabsTrigger value="sleep">Sleep</TabsTrigger>
+            <TabsTrigger value="mood">Mood</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+            <TabsTrigger value="crisis">Crisis</TabsTrigger>
+            <TabsTrigger value="hyperfocus">Hyperfocus</TabsTrigger>
+            <TabsTrigger value="more">More</TabsTrigger>
+          </TabsList>
 
-          {/* Mood Progress */}
-          <Card className="shadow-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span className="mr-2">😊</span> Mood Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              ) : getMoodChartData().length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={getMoodChartData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" domain={[1, 5]} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} name="Humor" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <div className="text-5xl mb-3">📊</div>
-                  <p className="text-muted-foreground font-medium">Nenhum dado de humor registrado</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <TabsContent value="overall" className="space-y-6">
+            <OverallProgress records={records} loading={loading} />
+          </TabsContent>
 
-          {/* Nutrition Progress */}
-          <Card className="shadow-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span className="mr-2">🍎</span> Nutrition Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              ) : getMealsChartData().length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={getMealsChartData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="meals" fill="hsl(var(--primary))" name="Refeições" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <div className="text-5xl mb-3">🥗</div>
-                  <p className="text-muted-foreground font-medium">Nenhum dado de nutrição registrado</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <TabsContent value="sleep" className="space-y-6">
+            <SleepAnalytics records={records} loading={loading} />
+          </TabsContent>
 
-          {/* Activities Progress */}
-          <Card className="shadow-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span className="mr-2">🏃</span> Activities Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              ) : getActivitiesChartData().length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={getActivitiesChartData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="activities" fill="hsl(var(--primary))" name="Atividades" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="bg-secondary rounded-xl p-8 text-center">
-                  <div className="text-5xl mb-3">🎯</div>
-                  <p className="text-muted-foreground font-medium">Nenhum dado de atividades registrado</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="mood" className="space-y-6">
+            <MoodAnalytics records={records} loading={loading} />
+          </TabsContent>
 
-        {/* Overall Progress */}
-        <Card className="shadow-card border-border">
-          <CardHeader>
-            <CardTitle>Overall Progress</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Sleep Consistency</span>
-                <span className="font-medium text-foreground">{calculateSleepConsistency()}%</span>
-              </div>
-              <Progress value={calculateSleepConsistency()} className="h-2" />
+          <TabsContent value="nutrition" className="space-y-6">
+            <NutritionAnalytics records={records} loading={loading} />
+          </TabsContent>
+
+          <TabsContent value="crisis" className="space-y-6">
+            <CrisisAnalytics records={records} loading={loading} />
+          </TabsContent>
+
+          <TabsContent value="hyperfocus" className="space-y-6">
+            <HyperfocusAnalytics records={records} loading={loading} />
+          </TabsContent>
+
+          <TabsContent value="more" className="space-y-6">
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Additional analytics sections coming soon:</p>
+              <ul className="mt-4 space-y-2">
+                <li>• Medication Adherence</li>
+                <li>• Activities & Therapy Progress</li>
+                <li>• Unexpected Events Analysis</li>
+              </ul>
             </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Mood Stability</span>
-                <span className="font-medium text-foreground">{calculateMoodStability()}%</span>
-              </div>
-              <Progress value={calculateMoodStability()} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Nutrition Quality</span>
-                <span className="font-medium text-foreground">{calculateNutritionQuality()}%</span>
-              </div>
-              <Progress value={calculateNutritionQuality()} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
 
-        <div className="mt-6 text-center">
-          <p className="text-muted-foreground">
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground text-sm">
             {records.length === 0 
               ? "Continue recording daily data to unlock detailed progress analytics and insights"
-              : `Showing analytics based on ${records.length} day${records.length > 1 ? 's' : ''} of recorded data`
+              : `Displaying analytics from ${records.length} day${records.length > 1 ? 's' : ''} of recorded data • ${filterType.charAt(0).toUpperCase() + filterType.slice(1)} view`
             }
           </p>
         </div>
