@@ -6,7 +6,6 @@ import { HomePage } from "@/components/HomePage";
 import { MyKidsPage } from "@/components/MyKidsPage";
 import { DailyRecordsPage } from "@/components/DailyRecordsPage";
 import { HistoryPage } from "@/components/HistoryPage";
-import { ProgressPage } from "@/components/ProgressPage";
 import { JourneyPage } from "@/components/JourneyPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { SupportPage } from "@/components/SupportPage";
@@ -87,8 +86,6 @@ export default function Dashboard() {
         return <DailyRecordsPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
       case "history":
         return <HistoryPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
-      case "progress":
-        return <ProgressPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
       case "journey":
         return <JourneyPage children={children} selectedChild={selectedChild} onSelectChild={setSelectedChild} />;
       case "settings":

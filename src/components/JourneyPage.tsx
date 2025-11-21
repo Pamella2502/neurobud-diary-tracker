@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileDown, FileText, CheckCircle2, Lightbulb } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { FileDown, FileText, CheckCircle2, Lightbulb, Calendar as CalendarIcon } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 
 type JourneyPageProps = {
@@ -12,6 +14,9 @@ type JourneyPageProps = {
 };
 
 export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyPageProps) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   if (!selectedChild) {
     return (
       <div className="p-6 md:p-8">
@@ -52,6 +57,54 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
             </SelectContent>
           </Select>
         </div>
+
+        {/* Alert about daily journey availability */}
+        <Alert className="mb-8 bg-primary/10 border-primary/30">
+          <CalendarIcon className="h-5 w-5 text-primary" />
+          <AlertDescription className="ml-2 text-foreground">
+            <div className="space-y-2">
+              <p className="font-bold text-lg">
+                A JORNADA DO DIA FICARÁ DISPONÍVEL AQUI ÀS 11:59PM.
+              </p>
+              <p className="text-sm">
+                PARA CONSULTAR A JORNADA DE DIAS ANTERIORES, USE O FILTRO DE DATAS ABAIXO.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        {/* Date Range Filter */}
+        <Card className="shadow-card border-border mb-8">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Filter by Date Range</h3>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Start Date</label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">End Date</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button className="w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Apply Filter
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Daily Report */}
