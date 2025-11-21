@@ -914,22 +914,33 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Water Intake (ml)</Label>
-                    <Input
-                      type="number"
-                      className="mt-1"
-                      placeholder="e.g., 500"
-                      value={records.nutrition.waterIntake}
-                      onChange={(e) =>
-                        setRecords((prev) => ({
-                          ...prev,
-                          nutrition: { ...prev.nutrition, waterIntake: e.target.value },
-                        }))
-                      }
-                    />
-                  </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Water intake field - shown only when Water is checked in any meal */}
+                  {Object.entries(records.nutrition).some(
+                    ([key, value]) =>
+                      key !== "waterIntake" &&
+                      key !== "generalNotes" &&
+                      typeof value === "object" &&
+                      "foods" in value &&
+                      Array.isArray(value.foods) &&
+                      value.foods.includes("Water")
+                  ) && (
+                    <div>
+                      <Label>Water Intake (ml)</Label>
+                      <Input
+                        type="number"
+                        className="mt-1"
+                        placeholder="e.g., 500"
+                        value={records.nutrition.waterIntake}
+                        onChange={(e) =>
+                          setRecords((prev) => ({
+                            ...prev,
+                            nutrition: { ...prev.nutrition, waterIntake: e.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <Label>General Nutrition Notes</Label>

@@ -358,7 +358,9 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Crisis Record */}
-            {records.crisis_data && records.crisis_data.crises && records.crisis_data.crises.length > 0 && (
+            {records.crisis_data && Object.keys(records.crisis_data).some(key => 
+              Array.isArray(records.crisis_data[key]) && records.crisis_data[key].length > 0
+            ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -366,35 +368,48 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {records.crisis_data.crises.map((crisis: any, idx: number) => (
-                      <div key={idx} className="border rounded-lg p-4 bg-destructive/5">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          {crisis.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{crisis.type}</span></div>}
-                          {crisis.time && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{crisis.time}</span></div>}
-                          {crisis.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{crisis.intensity}</span></div>}
-                          {crisis.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{crisis.duration} min</span></div>}
+                  {['morning', 'afternoon', 'evening'].map((period) => {
+                    const crises = records.crisis_data[period];
+                    if (!crises || crises.length === 0) return null;
+                    
+                    return (
+                      <div key={period} className="mb-6 last:mb-0">
+                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
+                        <div className="space-y-3">
+                          {crises.map((crisis: any, idx: number) => (
+                            <div key={idx} className="border rounded-lg p-4 bg-destructive/5">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                                {crisis.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{crisis.type}</span></div>}
+                                {crisis.customType && crisis.type === "Other Type" && <div><span className="text-sm text-muted-foreground">Custom Type:</span> <span className="text-foreground font-medium">{crisis.customType}</span></div>}
+                                {crisis.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{crisis.intensity}</span></div>}
+                                {crisis.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{crisis.duration} min</span></div>}
+                              </div>
+                              {crisis.triggers && crisis.triggers.length > 0 && (
+                                <div className="mb-2">
+                                  <span className="text-sm text-muted-foreground">Triggers:</span> <span className="text-foreground">{crisis.triggers.join(', ')}</span>
+                                  {crisis.customTrigger && crisis.triggers.includes("Other type") && (
+                                    <span className="text-foreground"> ({crisis.customTrigger})</span>
+                                  )}
+                                </div>
+                              )}
+                              {crisis.strategies && crisis.strategies.length > 0 && (
+                                <div className="mb-2">
+                                  <span className="text-sm text-muted-foreground">Calming strategies:</span> <span className="text-foreground">{crisis.strategies.join(', ')}</span>
+                                </div>
+                              )}
+                              {crisis.notes && (
+                                <p className="text-sm text-muted-foreground mt-2">{crisis.notes}</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        {crisis.triggers && crisis.triggers.length > 0 && (
-                          <div className="mb-2">
-                            <span className="text-sm text-muted-foreground">Triggers:</span> <span className="text-foreground">{crisis.triggers.join(', ')}</span>
-                          </div>
-                        )}
-                        {crisis.calmingStrategies && crisis.calmingStrategies.length > 0 && (
-                          <div className="mb-2">
-                            <span className="text-sm text-muted-foreground">Calming strategies used:</span> <span className="text-foreground">{crisis.calmingStrategies.join(', ')}</span>
-                          </div>
-                        )}
-                        {crisis.notes && (
-                          <p className="text-sm text-muted-foreground mt-2">{crisis.notes}</p>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                  {records.crisis_data.generalNotes && (
+                    );
+                  })}
+                  {records.crisis_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.crisis_data.generalNotes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{records.crisis_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -402,7 +417,9 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Incident Record */}
-            {records.incident_data && records.incident_data.incidents && records.incident_data.incidents.length > 0 && (
+            {records.incident_data && Object.keys(records.incident_data).some(key => 
+              Array.isArray(records.incident_data[key]) && records.incident_data[key].length > 0
+            ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -410,37 +427,38 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {records.incident_data.incidents.map((incident: any, idx: number) => (
-                      <div key={idx} className="border rounded-lg p-4 bg-warning/5">
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          {incident.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{incident.type}</span></div>}
-                          {incident.time && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{incident.time}</span></div>}
+                  {['morning', 'afternoon', 'evening'].map((period) => {
+                    const incidents = records.incident_data[period];
+                    if (!incidents || incidents.length === 0) return null;
+                    
+                    return (
+                      <div key={period} className="mb-6 last:mb-0">
+                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
+                        <div className="space-y-3">
+                          {incidents.map((incident: any, idx: number) => (
+                            <div key={idx} className="border rounded-lg p-4 bg-warning/5">
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                {incident.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{incident.type}</span></div>}
+                                {incident.customType && incident.type === "Other Type" && <div><span className="text-sm text-muted-foreground">Custom Type:</span> <span className="text-foreground font-medium">{incident.customType}</span></div>}
+                              </div>
+                              {incident.consequences && incident.consequences.length > 0 && (
+                                <div className="mb-2">
+                                  <span className="text-sm text-muted-foreground">Consequences:</span> <span className="text-foreground">{incident.consequences.join(', ')}</span>
+                                </div>
+                              )}
+                              {incident.notes && (
+                                <p className="text-sm text-muted-foreground mt-2">{incident.notes}</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        {incident.description && (
-                          <div className="mb-2">
-                            <span className="text-sm text-muted-foreground">Description:</span>
-                            <p className="text-foreground mt-1">{incident.description}</p>
-                          </div>
-                        )}
-                        {incident.consequences && incident.consequences.length > 0 && (
-                          <div className="mb-2">
-                            <span className="text-sm text-muted-foreground">Consequences:</span> <span className="text-foreground">{incident.consequences.join(', ')}</span>
-                          </div>
-                        )}
-                        {incident.actionsTaken && (
-                          <div>
-                            <span className="text-sm text-muted-foreground">Actions taken:</span>
-                            <p className="text-foreground mt-1">{incident.actionsTaken}</p>
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                  {records.incident_data.generalNotes && (
+                    );
+                  })}
+                  {records.incident_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.incident_data.generalNotes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{records.incident_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -448,7 +466,9 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Hyperfocus Record */}
-            {records.hyperfocus_data && records.hyperfocus_data.episodes && records.hyperfocus_data.episodes.length > 0 && (
+            {records.hyperfocus_data && Object.keys(records.hyperfocus_data).some(key => 
+              Array.isArray(records.hyperfocus_data[key]) && records.hyperfocus_data[key].length > 0
+            ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -456,30 +476,35 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {records.hyperfocus_data.episodes.map((episode: any, idx: number) => (
-                      <div key={idx} className="border rounded-lg p-4 bg-accent/5">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          {episode.activity && <div><span className="text-sm text-muted-foreground">Activity:</span> <span className="text-foreground font-medium">{episode.activity}</span></div>}
-                          {episode.timeOfDay && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{episode.timeOfDay}</span></div>}
-                          {episode.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{episode.duration} min</span></div>}
-                          {episode.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{episode.intensity}</span></div>}
+                  {['morning', 'afternoon', 'evening'].map((period) => {
+                    const episodes = records.hyperfocus_data[period];
+                    if (!episodes || episodes.length === 0) return null;
+                    
+                    return (
+                      <div key={period} className="mb-6 last:mb-0">
+                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
+                        <div className="space-y-3">
+                          {episodes.map((episode: any, idx: number) => (
+                            <div key={idx} className="border rounded-lg p-4 bg-accent/5">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                                {episode.occurred && <div><span className="text-sm text-muted-foreground">Occurred:</span> <span className="text-foreground font-medium">{episode.occurred}</span></div>}
+                                {episode.topic && <div><span className="text-sm text-muted-foreground">Topic:</span> <span className="text-foreground font-medium">{episode.topic}</span></div>}
+                                {episode.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{episode.intensity}</span></div>}
+                                {episode.impact && <div><span className="text-sm text-muted-foreground">Impact:</span> <span className="text-foreground font-medium">{episode.impact}</span></div>}
+                              </div>
+                              {episode.notes && (
+                                <p className="text-sm text-muted-foreground mt-2">{episode.notes}</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        {episode.impact && (
-                          <div className="mb-2">
-                            <span className="text-sm text-muted-foreground">Impact:</span> <span className="text-foreground">{episode.impact}</span>
-                          </div>
-                        )}
-                        {episode.notes && (
-                          <p className="text-sm text-muted-foreground mt-2">{episode.notes}</p>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                  {records.hyperfocus_data.generalNotes && (
+                    );
+                  })}
+                  {records.hyperfocus_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.hyperfocus_data.generalNotes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{records.hyperfocus_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
