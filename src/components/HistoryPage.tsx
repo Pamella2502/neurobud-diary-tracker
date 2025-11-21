@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Loader2, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
+import { getTodayInUserTimezone, formatDateInUserTimezone } from "@/lib/timezone";
 
 type HistoryPageProps = {
   children: Child[];
@@ -29,40 +28,16 @@ type DailyRecord = {
 
 export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryPageProps) {
   const [records, setRecords] = useState<DailyRecord | null>(null);
-  const [allRecordDates, setAllRecordDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const todayDate = getTodayInUserTimezone();
 
   useEffect(() => {
     if (selectedChild) {
-      fetchAllRecordDates();
-      fetchRecords();
+      fetchTodayRecords();
     }
   }, [selectedChild]);
 
-  useEffect(() => {
-    if (selectedChild && selectedDate) {
-      fetchRecords();
-    }
-  }, [selectedDate]);
-
-  const fetchAllRecordDates = async () => {
-    if (!selectedChild) return;
-
-    const { data, error } = await supabase
-      .from("daily_records")
-      .select("record_date")
-      .eq("child_id", selectedChild.id)
-      .order("record_date", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching record dates:", error);
-    } else {
-      setAllRecordDates(data?.map((r) => r.record_date) || []);
-    }
-  };
-
-  const fetchRecords = async () => {
+  const fetchTodayRecords = async () => {
     if (!selectedChild) return;
 
     setLoading(true);
@@ -70,7 +45,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
       .from("daily_records")
       .select("*")
       .eq("child_id", selectedChild.id)
-      .eq("record_date", selectedDate)
+      .eq("record_date", todayDate)
       .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
@@ -79,24 +54,6 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
       setRecords(data || null);
     }
     setLoading(false);
-  };
-
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const currentIndex = allRecordDates.indexOf(selectedDate);
-    if (direction === 'prev' && currentIndex < allRecordDates.length - 1) {
-      setSelectedDate(allRecordDates[currentIndex + 1]);
-    } else if (direction === 'next' && currentIndex > 0) {
-      setSelectedDate(allRecordDates[currentIndex - 1]);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString + 'T00:00:00').toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
   };
 
   if (!selectedChild) {
@@ -111,65 +68,33 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
     );
   }
 
-  const hasRecords = allRecordDates.length > 0;
-  const currentIndex = allRecordDates.indexOf(selectedDate);
-  const canGoPrev = currentIndex < allRecordDates.length - 1;
-  const canGoNext = currentIndex > 0;
-
   return (
     <div className="p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">History</h1>
-            <p className="text-muted-foreground">View past records for {selectedChild.name}</p>
+            <p className="text-muted-foreground">Today's records for {selectedChild.name}</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0">
-            <Select
-              value={selectedChild?.id || ""}
-              onValueChange={(value) => {
-                const child = children.find((c) => c.id === value);
-                if (child) onSelectChild(child);
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {children.map((child) => (
-                  <SelectItem key={child.id} value={child.id}>
-                    {child.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateDate('prev')}
-                disabled={!canGoPrev}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full sm:w-48"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateDate('next')}
-                disabled={!canGoNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <Select
+            value={selectedChild?.id || ""}
+            onValueChange={(value) => {
+              const child = children.find((c) => c.id === value);
+              if (child) onSelectChild(child);
+            }}
+          >
+            <SelectTrigger className="mt-4 sm:mt-0 w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {children.map((child) => (
+                <SelectItem key={child.id} value={child.id}>
+                  {child.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
@@ -179,40 +104,24 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
               <p className="text-muted-foreground">Loading records...</p>
             </CardContent>
           </Card>
-        ) : !hasRecords ? (
-          <Card className="shadow-card border-border">
-            <CardContent className="p-8 text-center">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Records Yet</h3>
-              <p className="text-muted-foreground">No records have been saved for {selectedChild.name} yet.</p>
-              <p className="text-muted-foreground mt-2">Start tracking by going to Daily Records page.</p>
-            </CardContent>
-          </Card>
         ) : !records ? (
           <Card className="shadow-card border-border">
-            <CardContent className="p-8 text-center">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Records Found</h3>
-              <p className="text-muted-foreground">No records found for {formatDate(selectedDate)}</p>
-              {hasRecords && (
-                <p className="text-muted-foreground mt-2">
-                  You have {allRecordDates.length} day{allRecordDates.length > 1 ? 's' : ''} with records. 
-                  Use the date picker to view them.
-                </p>
-              )}
+            <CardContent className="p-12 text-center">
+              <div className="text-6xl mb-6">📝</div>
+              <h3 className="text-2xl font-bold text-foreground mb-3">
+                OS REGISTROS DO DIA VÃO APARECER AQUI QUANDO FOREM SALVOS
+              </h3>
+              <p className="text-muted-foreground text-lg">
+                {formatDateInUserTimezone(todayDate)}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-6">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
               <p className="text-sm text-foreground">
-                <strong>Viewing records for:</strong> {formatDate(selectedDate)}
+                <strong>Viewing records for today:</strong> {formatDateInUserTimezone(todayDate)}
               </p>
-              {hasRecords && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Record {currentIndex + 1} of {allRecordDates.length} days tracked
-                </p>
-              )}
             </div>
 
             {/* Sleep Record */}
@@ -404,7 +313,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <span className="mr-2">🏃</span> Activities
+                    <span className="mr-2">🎯</span> Activities & Therapies
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -418,53 +327,19 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                         <div className="space-y-3">
                           {activities.map((activity: any, idx: number) => (
                             <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                              <p className="font-medium text-foreground">{activity.type}</p>
-                              {activity.subtype && <p className="text-sm text-muted-foreground">Subtype: {activity.subtype}</p>}
-                              {activity.details && <p className="text-sm mt-2">{activity.details}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Crises Record */}
-            {records.crisis_data && Object.keys(records.crisis_data).some(key => 
-              Array.isArray(records.crisis_data[key]) && records.crisis_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border border-l-4 border-l-red-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">🚨</span> Crises
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const crises = records.crisis_data[period];
-                    if (!crises || crises.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {crises.map((crisis: any, idx: number) => (
-                            <div key={idx} className="border border-red-200 dark:border-red-900 rounded-lg p-3 bg-red-50 dark:bg-red-950/20">
                               <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                                <div><span className="text-muted-foreground">Type:</span> {crisis.type || crisis.customType}</div>
-                                {crisis.intensity && <div><span className="text-muted-foreground">Intensity:</span> {crisis.intensity}</div>}
-                                {crisis.duration && <div><span className="text-muted-foreground">Duration:</span> {crisis.duration} min</div>}
+                                {activity.type && <div><span className="text-muted-foreground">Type:</span> {activity.type}</div>}
+                                {activity.name && <div><span className="text-muted-foreground">Activity:</span> {activity.name}</div>}
+                                {activity.duration && <div><span className="text-muted-foreground">Duration:</span> {activity.duration} min</div>}
+                                {activity.participation && <div><span className="text-muted-foreground">Participation:</span> {activity.participation}</div>}
                               </div>
-                              {crisis.triggers && crisis.triggers.length > 0 && (
-                                <p className="text-sm text-muted-foreground">Triggers: {crisis.triggers.join(', ')}</p>
+                              {activity.skills && activity.skills.length > 0 && (
+                                <div className="text-sm mb-2">
+                                  <span className="text-muted-foreground">Skills practiced:</span> {activity.skills.join(', ')}
+                                </div>
                               )}
-                              {crisis.strategies && crisis.strategies.length > 0 && (
-                                <p className="text-sm text-muted-foreground mt-1">Strategies: {crisis.strategies.join(', ')}</p>
-                              )}
-                              {crisis.notes && (
-                                <p className="text-sm mt-2">{crisis.notes}</p>
+                              {activity.observations && (
+                                <p className="text-sm text-muted-foreground">{activity.observations}</p>
                               )}
                             </div>
                           ))}
@@ -472,88 +347,141 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
+                  {records.activity_data.notes && (
+                    <div className="mt-4 pt-4 border-t">
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
+                      <p className="text-foreground whitespace-pre-wrap">{records.activity_data.notes}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
 
-            {/* Incidents Record */}
-            {records.incident_data && Object.keys(records.incident_data).some(key => 
-              Array.isArray(records.incident_data[key]) && records.incident_data[key].length > 0
-            ) && (
+            {/* Crisis Record */}
+            {records.crisis_data && records.crisis_data.crises && records.crisis_data.crises.length > 0 && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <span className="mr-2">🔄</span> Unexpected Occurrences
+                    <span className="mr-2">⚠️</span> Crisis Episodes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const incidents = records.incident_data[period];
-                    if (!incidents || incidents.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {incidents.map((incident: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                              <p className="font-medium text-foreground">{incident.type || incident.customType}</p>
-                              {incident.consequences && incident.consequences.length > 0 && (
-                                <p className="text-sm text-muted-foreground mt-1">Consequences: {incident.consequences.join(', ')}</p>
-                              )}
-                              {incident.notes && (
-                                <p className="text-sm mt-2">{incident.notes}</p>
-                              )}
-                            </div>
-                          ))}
+                  <div className="space-y-4">
+                    {records.crisis_data.crises.map((crisis: any, idx: number) => (
+                      <div key={idx} className="border rounded-lg p-4 bg-destructive/5">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                          {crisis.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{crisis.type}</span></div>}
+                          {crisis.time && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{crisis.time}</span></div>}
+                          {crisis.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{crisis.intensity}</span></div>}
+                          {crisis.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{crisis.duration} min</span></div>}
                         </div>
+                        {crisis.triggers && crisis.triggers.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-sm text-muted-foreground">Triggers:</span> <span className="text-foreground">{crisis.triggers.join(', ')}</span>
+                          </div>
+                        )}
+                        {crisis.calmingStrategies && crisis.calmingStrategies.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-sm text-muted-foreground">Calming strategies used:</span> <span className="text-foreground">{crisis.calmingStrategies.join(', ')}</span>
+                          </div>
+                        )}
+                        {crisis.notes && (
+                          <p className="text-sm text-muted-foreground mt-2">{crisis.notes}</p>
+                        )}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                  {records.crisis_data.generalNotes && (
+                    <div className="mt-4 pt-4 border-t">
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
+                      <p className="text-foreground whitespace-pre-wrap">{records.crisis_data.generalNotes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Incident Record */}
+            {records.incident_data && records.incident_data.incidents && records.incident_data.incidents.length > 0 && (
+              <Card className="shadow-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <span className="mr-2">📌</span> Unexpected Events
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {records.incident_data.incidents.map((incident: any, idx: number) => (
+                      <div key={idx} className="border rounded-lg p-4 bg-warning/5">
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          {incident.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{incident.type}</span></div>}
+                          {incident.time && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{incident.time}</span></div>}
+                        </div>
+                        {incident.description && (
+                          <div className="mb-2">
+                            <span className="text-sm text-muted-foreground">Description:</span>
+                            <p className="text-foreground mt-1">{incident.description}</p>
+                          </div>
+                        )}
+                        {incident.consequences && incident.consequences.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-sm text-muted-foreground">Consequences:</span> <span className="text-foreground">{incident.consequences.join(', ')}</span>
+                          </div>
+                        )}
+                        {incident.actionsTaken && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">Actions taken:</span>
+                            <p className="text-foreground mt-1">{incident.actionsTaken}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {records.incident_data.generalNotes && (
+                    <div className="mt-4 pt-4 border-t">
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
+                      <p className="text-foreground whitespace-pre-wrap">{records.incident_data.generalNotes}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
 
             {/* Hyperfocus Record */}
-            {records.hyperfocus_data && Object.keys(records.hyperfocus_data).some(key => 
-              Array.isArray(records.hyperfocus_data[key]) && records.hyperfocus_data[key].length > 0
-            ) && (
+            {records.hyperfocus_data && records.hyperfocus_data.episodes && records.hyperfocus_data.episodes.length > 0 && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <span className="mr-2">🎯</span> Hyperfocus
+                    <span className="mr-2">🎯</span> Hyperfocus Episodes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const hyperfocusItems = records.hyperfocus_data[period];
-                    if (!hyperfocusItems || hyperfocusItems.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {hyperfocusItems.map((hf: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                              <p className="font-medium text-foreground">Occurred: {hf.occurred}</p>
-                              {hf.occurred === 'Yes' && (
-                                <>
-                                  {hf.topic && <p className="text-sm mt-1"><span className="text-muted-foreground">Topic:</span> {hf.topic}</p>}
-                                  <div className="grid grid-cols-2 gap-2 text-sm mt-2">
-                                    {hf.intensity && <div><span className="text-muted-foreground">Intensity:</span> {hf.intensity}</div>}
-                                    {hf.impact && <div><span className="text-muted-foreground">Impact:</span> {hf.impact}</div>}
-                                  </div>
-                                </>
-                              )}
-                              {hf.notes && (
-                                <p className="text-sm mt-2">{hf.notes}</p>
-                              )}
-                            </div>
-                          ))}
+                  <div className="space-y-4">
+                    {records.hyperfocus_data.episodes.map((episode: any, idx: number) => (
+                      <div key={idx} className="border rounded-lg p-4 bg-accent/5">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                          {episode.activity && <div><span className="text-sm text-muted-foreground">Activity:</span> <span className="text-foreground font-medium">{episode.activity}</span></div>}
+                          {episode.timeOfDay && <div><span className="text-sm text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{episode.timeOfDay}</span></div>}
+                          {episode.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{episode.duration} min</span></div>}
+                          {episode.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{episode.intensity}</span></div>}
                         </div>
+                        {episode.impact && (
+                          <div className="mb-2">
+                            <span className="text-sm text-muted-foreground">Impact:</span> <span className="text-foreground">{episode.impact}</span>
+                          </div>
+                        )}
+                        {episode.notes && (
+                          <p className="text-sm text-muted-foreground mt-2">{episode.notes}</p>
+                        )}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                  {records.hyperfocus_data.generalNotes && (
+                    <div className="mt-4 pt-4 border-t">
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
+                      <p className="text-foreground whitespace-pre-wrap">{records.hyperfocus_data.generalNotes}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

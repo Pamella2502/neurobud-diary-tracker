@@ -15,7 +15,6 @@ const menuItems = [
   { id: "mykids", label: "My Kids", icon: Users },
   { id: "records", label: "Daily Records", icon: FileText },
   { id: "history", label: "History", icon: History },
-  { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "journey", label: "Journey", icon: FileDown },
   { id: "settings", label: "Settings", icon: SettingsIcon },
   { id: "support", label: "Support", icon: HelpCircle },
