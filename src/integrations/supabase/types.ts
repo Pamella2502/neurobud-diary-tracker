@@ -103,6 +103,48 @@ export type Database = {
           },
         ]
       }
+      daily_summary: {
+        Row: {
+          alerts: Json
+          child_id: string
+          comparison_data: Json
+          created_at: string
+          evolution_status: string
+          id: string
+          insights: Json
+          score: number
+          summary_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alerts?: Json
+          child_id: string
+          comparison_data?: Json
+          created_at?: string
+          evolution_status: string
+          id?: string
+          insights?: Json
+          score?: number
+          summary_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alerts?: Json
+          child_id?: string
+          comparison_data?: Json
+          created_at?: string
+          evolution_status?: string
+          id?: string
+          insights?: Json
+          score?: number
+          summary_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           agreed_to_terms: boolean
