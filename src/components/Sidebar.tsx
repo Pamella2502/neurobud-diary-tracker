@@ -43,7 +43,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-72 bg-gradient-to-b from-primary via-primary to-primary-hover text-white shadow-xl flex flex-col">
+    <div className="w-72 bg-primary text-white shadow-xl flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-white/20">
         <div className="flex items-center">
