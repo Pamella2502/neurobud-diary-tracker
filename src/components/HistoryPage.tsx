@@ -26,6 +26,18 @@ type DailyRecord = {
   extra_notes: string;
 };
 
+// Helper function to check if an object has any meaningful data
+const hasData = (obj: any): boolean => {
+  if (!obj || typeof obj !== 'object') return false;
+  
+  // Check if any value in the object is truthy and not an empty array/object
+  return Object.values(obj).some(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object' && value !== null) return hasData(value);
+    return value !== null && value !== undefined && value !== '';
+  });
+};
+
 export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryPageProps) {
   const [records, setRecords] = useState<DailyRecord | null>(null);
   const [loading, setLoading] = useState(false);
@@ -125,7 +137,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             </div>
 
             {/* Sleep Record */}
-            {records.sleep_data && Object.keys(records.sleep_data).length > 0 && (
+            {hasData(records.sleep_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -182,7 +194,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Mood Record */}
-            {records.mood_data && Object.keys(records.mood_data).length > 0 && (
+            {hasData(records.mood_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -208,7 +220,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Nutrition Record */}
-            {records.nutrition_data && Object.keys(records.nutrition_data).length > 0 && (
+            {hasData(records.nutrition_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
