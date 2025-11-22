@@ -81,13 +81,12 @@ type RecordsState = {
     evening: { mood: string; notes: string };
   };
   nutrition: {
-    breakfast: { quality: string; foods: string[]; notes: string };
-    morningSnack: { quality: string; foods: string[]; notes: string };
-    lunch: { quality: string; foods: string[]; notes: string };
-    afternoonSnack: { quality: string; foods: string[]; notes: string };
-    dinner: { quality: string; foods: string[]; notes: string };
-    nightSnack: { quality: string; foods: string[]; notes: string };
-    waterIntake: string;
+    breakfast: { quality: string; foods: string[]; notes: string; waterIntake: string };
+    morningSnack: { quality: string; foods: string[]; notes: string; waterIntake: string };
+    lunch: { quality: string; foods: string[]; notes: string; waterIntake: string };
+    afternoonSnack: { quality: string; foods: string[]; notes: string; waterIntake: string };
+    dinner: { quality: string; foods: string[]; notes: string; waterIntake: string };
+    nightSnack: { quality: string; foods: string[]; notes: string; waterIntake: string };
     generalNotes: string;
   };
   medication: {
@@ -140,13 +139,12 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
       evening: { mood: "", notes: "" },
     },
     nutrition: {
-      breakfast: { quality: "", foods: [], notes: "" },
-      morningSnack: { quality: "", foods: [], notes: "" },
-      lunch: { quality: "", foods: [], notes: "" },
-      afternoonSnack: { quality: "", foods: [], notes: "" },
-      dinner: { quality: "", foods: [], notes: "" },
-      nightSnack: { quality: "", foods: [], notes: "" },
-      waterIntake: "",
+      breakfast: { quality: "", foods: [], notes: "", waterIntake: "" },
+      morningSnack: { quality: "", foods: [], notes: "", waterIntake: "" },
+      lunch: { quality: "", foods: [], notes: "", waterIntake: "" },
+      afternoonSnack: { quality: "", foods: [], notes: "", waterIntake: "" },
+      dinner: { quality: "", foods: [], notes: "", waterIntake: "" },
+      nightSnack: { quality: "", foods: [], notes: "", waterIntake: "" },
       generalNotes: "",
     },
     medication: {
@@ -910,44 +908,30 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                           }
                         />
                       </div>
+
+                      <div>
+                        <Label>Water Intake (ml)</Label>
+                        <Input
+                          type="number"
+                          className="mt-1"
+                          placeholder="e.g., 500"
+                          value={records.nutrition[meal.key].waterIntake}
+                          onChange={(e) =>
+                            setRecords((prev) => ({
+                              ...prev,
+                              nutrition: {
+                                ...prev.nutrition,
+                                [meal.key]: { ...prev.nutrition[meal.key], waterIntake: e.target.value },
+                              },
+                            }))
+                          }
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  {/* Water intake field - shown only when Water is checked in any meal */}
-                  {(() => {
-                    const hasWater = [
-                      records.nutrition.breakfast,
-                      records.nutrition.morningSnack,
-                      records.nutrition.lunch,
-                      records.nutrition.afternoonSnack,
-                      records.nutrition.dinner,
-                      records.nutrition.nightSnack,
-                    ].some((meal) => meal.foods.includes("Water"));
-
-                    if (hasWater) {
-                      return (
-                        <div>
-                          <Label>Water Intake (ml)</Label>
-                          <Input
-                            type="number"
-                            className="mt-1"
-                            placeholder="e.g., 500"
-                            value={records.nutrition.waterIntake}
-                            onChange={(e) =>
-                              setRecords((prev) => ({
-                                ...prev,
-                                nutrition: { ...prev.nutrition, waterIntake: e.target.value },
-                              }))
-                            }
-                          />
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
                   <div>
                     <Label>General Nutrition Notes</Label>
                     <Textarea
