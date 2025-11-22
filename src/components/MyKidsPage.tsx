@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, TrendingUp, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 
 type MyKidsPageProps = {
@@ -128,7 +128,7 @@ export function MyKidsPage({ onChildAdded }: MyKidsPageProps) {
             {children.map((child) => (
               <Card key={child.id} className="shadow-card border-border hover:shadow-lg transition-all duration-300">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between">
                     <div>
                       <h3 className="text-xl font-semibold text-foreground">{child.name}</h3>
                       <p className="text-muted-foreground">Age: {child.age} years</p>
@@ -140,16 +140,6 @@ export function MyKidsPage({ onChildAdded }: MyKidsPageProps) {
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    <Button variant="secondary" className="w-full justify-start">
-                      <Users className="mr-2 h-4 w-4" />
-                      Daily Records
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      View Progress
                     </Button>
                   </div>
                 </CardContent>
