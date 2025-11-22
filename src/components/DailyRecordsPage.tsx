@@ -909,24 +909,26 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                         />
                       </div>
 
-                      <div>
-                        <Label>Water Intake (ml)</Label>
-                        <Input
-                          type="number"
-                          className="mt-1"
-                          placeholder="e.g., 500"
-                          value={records.nutrition[meal.key].waterIntake}
-                          onChange={(e) =>
-                            setRecords((prev) => ({
-                              ...prev,
-                              nutrition: {
-                                ...prev.nutrition,
-                                [meal.key]: { ...prev.nutrition[meal.key], waterIntake: e.target.value },
-                              },
-                            }))
-                          }
-                        />
-                      </div>
+                      {records.nutrition[meal.key].foods.includes("Water") && (
+                        <div>
+                          <Label>Water Intake (ml)</Label>
+                          <Input
+                            type="number"
+                            className="mt-1"
+                            placeholder="e.g., 500"
+                            value={records.nutrition[meal.key].waterIntake}
+                            onChange={(e) =>
+                              setRecords((prev) => ({
+                                ...prev,
+                                nutrition: {
+                                  ...prev.nutrition,
+                                  [meal.key]: { ...prev.nutrition[meal.key], waterIntake: e.target.value },
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
