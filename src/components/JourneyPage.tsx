@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDateInUserTimezone } from "@/lib/timezone";
 import type { Child } from "@/pages/Dashboard";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 type JourneyPageProps = {
   children: Child[];
@@ -60,8 +60,6 @@ const hasData = (obj: any): boolean => {
     return value !== null && value !== undefined && value !== '';
   });
 };
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyPageProps) {
   const [startDate, setStartDate] = useState("");
@@ -171,80 +169,21 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
     return 'text-red-500';
   };
 
-  // Generate chart data from record
-  const generateMoodChartData = (record: DailyRecord | null) => {
-    if (!record || !hasData(record.mood_data)) return [];
-    
-    const moodMap: { [key: string]: number } = {
-      'Happy': 5,
-      'Calm': 4,
-      'Neutral': 3,
-      'Sad': 2,
-      'Angry': 1,
-      'Anxious': 2,
-      'Frustrated': 2
-    };
-
-    return ['morning', 'afternoon', 'evening'].map(period => ({
-      period: period === 'morning' ? 'Manhã' : period === 'afternoon' ? 'Tarde' : 'Noite',
-      mood: moodMap[record.mood_data[period]?.mood] || 0,
-    })).filter(item => item.mood > 0);
+  // Generate trend data for line chart (multiple days)
+  const generateTrendData = () => {
+    return reports.map(r => ({
+      date: formatDateInUserTimezone(r.summary.summary_date).split(',')[0], // Short date
+      score: r.summary.score,
+    })).reverse(); // Chronological order
   };
 
-  const generateNutritionChartData = (record: DailyRecord | null) => {
-    if (!record || !hasData(record.nutrition_data)) return [];
-    
-    const meals = ['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'nightSnack'];
-    const mealLabels: { [key: string]: string } = {
-      breakfast: 'Café',
-      morningSnack: 'Lanche Manhã',
-      lunch: 'Almoço',
-      afternoonSnack: 'Lanche Tarde',
-      dinner: 'Jantar',
-      nightSnack: 'Ceia'
-    };
-    
-    const qualityMap: { [key: string]: number } = {
-      'Excellent': 5,
-      'Good': 4,
-      'Average': 3,
-      'Poor': 2
-    };
-
-    return meals
-      .filter(meal => record.nutrition_data[meal]?.quality)
-      .map(meal => ({
-        name: mealLabels[meal],
-        quality: qualityMap[record.nutrition_data[meal].quality] || 0,
-      }));
-  };
-
-  const generateCrisisChartData = (record: DailyRecord | null) => {
-    if (!record || !hasData(record.crisis_data)) return [];
-    
-    const severityCount: { [key: string]: number } = {
-      'Leve': 0,
-      'Moderada': 0,
-      'Intensa': 0
-    };
-
-    ['morning', 'afternoon', 'evening'].forEach(period => {
-      const crises = record.crisis_data[period];
-      if (crises && Array.isArray(crises)) {
-        crises.forEach((crisis: any) => {
-          if (crisis.severity && severityCount[crisis.severity] !== undefined) {
-            severityCount[crisis.severity]++;
-          }
-        });
-      }
-    });
-
-    return Object.entries(severityCount)
-      .filter(([_, count]) => count > 0)
-      .map(([severity, count]) => ({
-        name: severity,
-        value: count
-      }));
+  // Calculate trend indicator for a specific metric
+  const getTrendIndicator = (current: number, previous: number | null) => {
+    if (previous === null || previous === undefined) return '➡';
+    const diff = current - previous;
+    if (diff > 5) return '⬆'; // Improved
+    if (diff < -5) return '⬇'; // Worsened
+    return '➡'; // Stable
   };
 
   if (!selectedChild) {
@@ -355,11 +294,38 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
           </Card>
         ) : (
           <div className="space-y-8">
-            {reports.map((report) => {
+            {/* Trend Chart - Shows evolution across all reports */}
+            {reports.length > 1 && (
+              <Card className="shadow-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    📈 Tendência de Evolução
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={generateTrendData()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip />
+                      <Line 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                        name="Pontuação"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {reports.map((report, reportIndex) => {
               const { summary, record } = report;
-              const moodData = generateMoodChartData(record);
-              const nutritionData = generateNutritionChartData(record);
-              const crisisData = generateCrisisChartData(record);
+              const previousReport = reportIndex < reports.length - 1 ? reports[reportIndex + 1] : null;
 
               return (
                 <Card key={summary.id} className="shadow-card border-border">
@@ -434,77 +400,116 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                       </div>
                     )}
 
-                    {/* Charts Section */}
-                    {record && (
+                    {/* Simple Indicators Section */}
+                    {record && previousReport && (
                       <div className="mb-8">
-                        <h4 className="text-lg font-semibold text-foreground mb-4">📈 Gráficos do Dia</h4>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {/* Mood Chart */}
-                          {moodData.length > 0 && (
+                        <h4 className="text-lg font-semibold text-foreground mb-4">📊 Indicadores de Tendência</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {/* Score Trend */}
+                          <Card className="border-muted">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-muted-foreground mb-1">Pontuação Geral</p>
+                                  <p className="text-2xl font-bold text-foreground">{summary.score.toFixed(0)}</p>
+                                </div>
+                                <div className="text-3xl">
+                                  {getTrendIndicator(summary.score, previousReport.summary.score)}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Sleep Quality Trend */}
+                          {record.sleep_data?.quality && previousReport.record?.sleep_data?.quality && (
                             <Card className="border-muted">
-                              <CardHeader>
-                                <CardTitle className="text-base">😊 Humor ao Longo do Dia</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <BarChart data={moodData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="period" />
-                                    <YAxis domain={[0, 5]} />
-                                    <Tooltip />
-                                    <Bar dataKey="mood" fill="#8884d8" name="Humor (1-5)" />
-                                  </BarChart>
-                                </ResponsiveContainer>
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-1">Qualidade do Sono</p>
+                                    <p className="text-base font-semibold text-foreground">{record.sleep_data.quality}</p>
+                                  </div>
+                                  <div className="text-3xl">
+                                    {(() => {
+                                      const qualityMap: { [key: string]: number } = {
+                                        'Excellent': 5, 'Good': 4, 'Regular': 3, 'Poor': 2, 'Terrible': 1, 'Did not sleep': 0
+                                      };
+                                      const current = qualityMap[record.sleep_data.quality] || 0;
+                                      const previous = qualityMap[previousReport.record.sleep_data.quality] || 0;
+                                      return getTrendIndicator(current * 20, previous * 20);
+                                    })()}
+                                  </div>
+                                </div>
                               </CardContent>
                             </Card>
                           )}
 
-                          {/* Nutrition Chart */}
-                          {nutritionData.length > 0 && (
+                          {/* Mood Trend */}
+                          {record.mood_data && previousReport.record?.mood_data && (
                             <Card className="border-muted">
-                              <CardHeader>
-                                <CardTitle className="text-base">🍎 Qualidade das Refeições</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <BarChart data={nutritionData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis domain={[0, 5]} />
-                                    <Tooltip />
-                                    <Bar dataKey="quality" fill="#00C49F" name="Qualidade (1-5)" />
-                                  </BarChart>
-                                </ResponsiveContainer>
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-1">Humor Geral</p>
+                                    <p className="text-base font-semibold text-foreground">
+                                      {['morning', 'afternoon', 'evening'].filter(p => record.mood_data[p]?.mood).length} registros
+                                    </p>
+                                  </div>
+                                  <div className="text-3xl">
+                                    {(() => {
+                                      const moodMap: { [key: string]: number } = {
+                                        'Happy': 5, 'Calm': 4, 'Normal': 3, 'Sad': 2, 'Irritated': 2, 'Anxious': 2, 'Agitated': 1
+                                      };
+                                      const currentMoods = ['morning', 'afternoon', 'evening']
+                                        .map(p => moodMap[record.mood_data[p]?.mood] || 0)
+                                        .filter(v => v > 0);
+                                      const previousMoods = ['morning', 'afternoon', 'evening']
+                                        .map(p => moodMap[previousReport.record?.mood_data[p]?.mood] || 0)
+                                        .filter(v => v > 0);
+                                      
+                                      const currentAvg = currentMoods.length ? currentMoods.reduce((a, b) => a + b, 0) / currentMoods.length : 0;
+                                      const previousAvg = previousMoods.length ? previousMoods.reduce((a, b) => a + b, 0) / previousMoods.length : 0;
+                                      
+                                      return getTrendIndicator(currentAvg * 20, previousAvg * 20);
+                                    })()}
+                                  </div>
+                                </div>
                               </CardContent>
                             </Card>
                           )}
 
-                          {/* Crisis Chart */}
-                          {crisisData.length > 0 && (
+                          {/* Crisis Trend */}
+                          {record.crisis_data && previousReport.record?.crisis_data && (
                             <Card className="border-muted">
-                              <CardHeader>
-                                <CardTitle className="text-base">⚠️ Crises por Gravidade</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <ResponsiveContainer width="100%" height={200}>
-                                  <PieChart>
-                                    <Pie
-                                      data={crisisData}
-                                      cx="50%"
-                                      cy="50%"
-                                      labelLine={false}
-                                      label={(entry) => `${entry.name}: ${entry.value}`}
-                                      outerRadius={80}
-                                      fill="#8884d8"
-                                      dataKey="value"
-                                    >
-                                      {crisisData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                      ))}
-                                    </Pie>
-                                    <Tooltip />
-                                  </PieChart>
-                                </ResponsiveContainer>
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-1">Crises</p>
+                                    <p className="text-base font-semibold text-foreground">
+                                      {(() => {
+                                        let count = 0;
+                                        ['morning', 'afternoon', 'evening'].forEach(p => {
+                                          if (Array.isArray(record.crisis_data[p])) count += record.crisis_data[p].length;
+                                        });
+                                        return count;
+                                      })()} episódios
+                                    </p>
+                                  </div>
+                                  <div className="text-3xl">
+                                    {(() => {
+                                      let currentCount = 0;
+                                      let previousCount = 0;
+                                      ['morning', 'afternoon', 'evening'].forEach(p => {
+                                        if (Array.isArray(record.crisis_data[p])) currentCount += record.crisis_data[p].length;
+                                        if (Array.isArray(previousReport.record?.crisis_data[p])) previousCount += previousReport.record.crisis_data[p].length;
+                                      });
+                                      // Inverted: fewer crises = improvement
+                                      const current = Math.max(0, 100 - (currentCount * 20));
+                                      const previous = Math.max(0, 100 - (previousCount * 20));
+                                      return getTrendIndicator(current, previous);
+                                    })()}
+                                  </div>
+                                </div>
                               </CardContent>
                             </Card>
                           )}
