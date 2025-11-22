@@ -50,7 +50,7 @@ export default function Auth() {
         if (error) throw error;
         navigate("/");
       } else {
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${window.location.origin}/email-verified`;
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -83,10 +83,8 @@ export default function Auth() {
           if (userError) throw userError;
         }
 
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        });
+        // Redirect to check email page
+        navigate(`/check-email?email=${encodeURIComponent(email)}`);
       }
     } catch (error: any) {
       toast({
