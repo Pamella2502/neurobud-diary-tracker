@@ -83,6 +83,9 @@ export default function Auth() {
           if (userError) throw userError;
         }
 
+        // Save email for error recovery
+        localStorage.setItem('pending_verification_email', email);
+
         // Redirect to check email page
         navigate(`/check-email?email=${encodeURIComponent(email)}`);
       }

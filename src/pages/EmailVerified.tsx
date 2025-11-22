@@ -9,6 +9,9 @@ export default function EmailVerified() {
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
+    // Clear pending verification email from localStorage
+    localStorage.removeItem('pending_verification_email');
+    
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
