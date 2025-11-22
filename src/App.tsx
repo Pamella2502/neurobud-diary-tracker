@@ -9,6 +9,8 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import CheckEmail from "./pages/CheckEmail";
+import EmailVerified from "./pages/EmailVerified";
 import TermsOnboarding from "./components/TermsOnboarding";
 import type { Session } from "@supabase/supabase-js";
 
@@ -131,6 +133,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={session ? <Navigate to="/dashboard" /> : <Landing />} />
             <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            <Route path="/email-verified" element={<EmailVerified />} />
             <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
