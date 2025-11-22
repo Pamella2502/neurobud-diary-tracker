@@ -1,17 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Loader2, RefreshCw } from "lucide-react";
+import { Mail, Loader2, RefreshCw, Clock, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const EXPIRATION_TIME = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export default function CheckEmail() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email");
   const [loading, setLoading] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(EXPIRATION_TIME);
+  const [startTime] = useState(Date.now());
+  const [isExpired, setIsExpired] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = EXPIRATION_TIME - elapsed;
+
+      if (remaining <= 0) {
+        setTimeRemaining(0);
+        setIsExpired(true);
+        clearInterval(interval);
+      } else {
+        setTimeRemaining(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const getProgressPercentage = () => {
+    return (timeRemaining / EXPIRATION_TIME) * 100;
+  };
+
+  const getProgressColor = () => {
+    const percentage = getProgressPercentage();
+    if (percentage > 50) return "bg-green-500";
+    if (percentage > 25) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  const isWarningTime = () => {
+    return timeRemaining < 15 * 60 * 1000 && !isExpired; // Less than 15 minutes
+  };
 
   const handleResendEmail = async () => {
     if (!email) {
@@ -29,11 +73,14 @@ export default function CheckEmail() {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/email-verified`,
         },
       });
 
       if (error) throw error;
+
+      // Reset timer
+      window.location.reload();
 
       toast({
         title: "Email sent!",
@@ -69,6 +116,53 @@ export default function CheckEmail() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Timer Section */}
+            <div className={`bg-gradient-to-br ${isExpired ? 'from-destructive/10 to-destructive/20' : isWarningTime() ? 'from-yellow-500/10 to-yellow-500/20' : 'from-primary/10 to-accent/20'} p-6 rounded-xl border ${isExpired ? 'border-destructive/30' : isWarningTime() ? 'border-yellow-500/30' : 'border-primary/30'} animate-fade-in`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className={`w-5 h-5 ${isExpired ? 'text-destructive animate-pulse' : isWarningTime() ? 'text-yellow-600 animate-pulse' : 'text-primary'}`} />
+                  <span className="font-semibold text-sm">
+                    {isExpired ? 'Link Expired' : 'Link expires in'}
+                  </span>
+                </div>
+                <span className={`text-2xl font-bold tabular-nums ${isExpired ? 'text-destructive' : isWarningTime() ? 'text-yellow-600' : 'text-primary'}`}>
+                  {isExpired ? '0:00' : formatTime(timeRemaining)}
+                </span>
+              </div>
+              
+              {/* Custom Progress Bar */}
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary mb-2">
+                <div 
+                  className={`h-full transition-all duration-1000 ease-linear ${getProgressColor()}`}
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                {isExpired ? 'Please request a new verification link below' : 'Verification link is valid for 1 hour'}
+              </p>
+            </div>
+
+            {/* Warning Alert */}
+            {isWarningTime() && !isExpired && (
+              <Alert className="border-yellow-500/50 bg-yellow-500/10 animate-fade-in">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                  Your verification link will expire soon. Please verify your email or request a new link.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Expired Alert */}
+            {isExpired && (
+              <Alert variant="destructive" className="animate-fade-in">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Your verification link has expired. Click below to receive a new verification email.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground space-y-2">
               <p className="flex items-start">
                 <span className="mr-2">1.</span>
@@ -86,7 +180,7 @@ export default function CheckEmail() {
 
             <div className="pt-4 space-y-3">
               <Button
-                variant="outline"
+                variant={isExpired ? "default" : "outline"}
                 className="w-full"
                 onClick={handleResendEmail}
                 disabled={loading}
@@ -99,7 +193,7 @@ export default function CheckEmail() {
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Resend verification email
+                    {isExpired ? 'Send new verification email' : 'Resend verification email'}
                   </>
                 )}
               </Button>
