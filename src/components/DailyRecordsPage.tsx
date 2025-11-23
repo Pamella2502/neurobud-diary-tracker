@@ -261,7 +261,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
   const loadTodayRecords = async () => {
     if (!selectedChild) return;
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayInUserTimezone();
     const { data, error } = await supabase
       .from("daily_records")
       .select("*")
@@ -300,7 +300,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayInUserTimezone();
 
     const { error } = await supabase.from("daily_records").upsert(
       {
