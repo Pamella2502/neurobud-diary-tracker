@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle, Save, Plus, X } from "lucide-react";
+import { Loader2, AlertCircle, Save, Plus, X, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Child } from "@/pages/Dashboard";
+import { formatDateInUserTimezone, getTodayInUserTimezone } from "@/lib/timezone";
 
 type DailyRecordsPageProps = {
   children: Child[];
@@ -123,6 +124,7 @@ type RecordsState = {
 };
 
 export function DailyRecordsPage({ children, selectedChild, onSelectChild }: DailyRecordsPageProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [records, setRecords] = useState<RecordsState>({
     sleep: {
       quality: "",
@@ -241,6 +243,13 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
 
   useEffect(() => {
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -629,6 +638,27 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
             </Button>
           </div>
         </div>
+
+        {/* Date and Time Card */}
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {formatDateInUserTimezone(getTodayInUserTimezone())}
+                </p>
+                <p className="text-lg font-bold text-primary">
+                  {currentTime.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit' 
+                  })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {!selectedChild ? (
           <Card>
