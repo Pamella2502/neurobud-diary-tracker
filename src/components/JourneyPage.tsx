@@ -23,7 +23,7 @@ type DailySummary = {
   summary_date: string;
   score: number;
   evolution_status: 'improved' | 'regressed' | 'neutral';
-  insights: string[];
+  insights: Array<{text: string; title: string}>;
   alerts: string[];
   comparison_data: {
     previous_score: number | null;
@@ -393,7 +393,10 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                           {summary.insights.map((insight, idx) => (
                             <div key={idx} className="flex items-start gap-2 text-sm text-foreground bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
                               <Lightbulb className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                              <span>{insight}</span>
+                              <div>
+                                {insight.title && <p className="font-semibold mb-1">{insight.title}</p>}
+                                <span>{insight.text}</span>
+                              </div>
                             </div>
                           ))}
                         </div>
