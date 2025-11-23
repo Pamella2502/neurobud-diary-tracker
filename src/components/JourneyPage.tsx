@@ -421,7 +421,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                           </Card>
 
                           {/* Sleep Quality Trend */}
-                          {record.sleep_data?.quality && previousReport.record?.sleep_data?.quality && (
+                          {record.sleep_data?.quality && previousReport?.record?.sleep_data?.quality && (
                             <Card className="border-muted">
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
@@ -435,7 +435,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                         'Excellent': 5, 'Good': 4, 'Regular': 3, 'Poor': 2, 'Terrible': 1, 'Did not sleep': 0
                                       };
                                       const current = qualityMap[record.sleep_data.quality] || 0;
-                                      const previous = qualityMap[previousReport.record.sleep_data.quality] || 0;
+                                      const previous = qualityMap[previousReport?.record?.sleep_data?.quality || ''] || 0;
                                       return getTrendIndicator(current * 20, previous * 20);
                                     })()}
                                   </div>
@@ -445,7 +445,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                           )}
 
                           {/* Mood Trend */}
-                          {record.mood_data && previousReport.record?.mood_data && (
+                          {record.mood_data && previousReport?.record?.mood_data && (
                             <Card className="border-muted">
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
@@ -464,7 +464,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                         .map(p => moodMap[record.mood_data[p]?.mood] || 0)
                                         .filter(v => v > 0);
                                       const previousMoods = ['morning', 'afternoon', 'evening']
-                                        .map(p => moodMap[previousReport.record?.mood_data[p]?.mood] || 0)
+                                        .map(p => moodMap[previousReport?.record?.mood_data?.[p]?.mood] || 0)
                                         .filter(v => v > 0);
                                       
                                       const currentAvg = currentMoods.length ? currentMoods.reduce((a, b) => a + b, 0) / currentMoods.length : 0;
@@ -479,7 +479,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                           )}
 
                           {/* Crisis Trend */}
-                          {record.crisis_data && previousReport.record?.crisis_data && (
+                          {record.crisis_data && previousReport?.record?.crisis_data && (
                             <Card className="border-muted">
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
@@ -501,7 +501,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                       let previousCount = 0;
                                       ['morning', 'afternoon', 'evening'].forEach(p => {
                                         if (Array.isArray(record.crisis_data[p])) currentCount += record.crisis_data[p].length;
-                                        if (Array.isArray(previousReport.record?.crisis_data[p])) previousCount += previousReport.record.crisis_data[p].length;
+                                        if (Array.isArray(previousReport?.record?.crisis_data?.[p])) previousCount += previousReport.record.crisis_data[p].length;
                                       });
                                       // Inverted: fewer crises = improvement
                                       const current = Math.max(0, 100 - (currentCount * 20));
