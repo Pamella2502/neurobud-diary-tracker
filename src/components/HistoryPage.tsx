@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Clock } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 import { getTodayInUserTimezone, formatDateInUserTimezone } from "@/lib/timezone";
 
@@ -39,9 +39,17 @@ const hasData = (obj: any): boolean => {
 };
 
 export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryPageProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [records, setRecords] = useState<DailyRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const todayDate = getTodayInUserTimezone();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (selectedChild) {
@@ -108,6 +116,25 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             </SelectContent>
           </Select>
         </div>
+
+        {/* Time Card */}
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Current Time</p>
+                <p className="text-lg font-bold text-primary">
+                  {currentTime.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit' 
+                  })}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {loading ? (
           <Card className="shadow-card border-border">
