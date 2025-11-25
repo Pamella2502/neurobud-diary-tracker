@@ -202,12 +202,12 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 <div className="space-y-6 p-4">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
               <p className="text-sm text-foreground">
-                <strong>Viewing records for today:</strong> {formatDateInUserTimezone(todayDate)}
+                <strong>Record Date:</strong> {formatDateInUserTimezone(record.record_date)}
               </p>
             </div>
 
             {/* Sleep Record */}
-            {hasData(records.sleep_data) && (
+            {hasData(record.sleep_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -216,47 +216,47 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {records.sleep_data.quality && (
+                    {record.sleep_data.quality && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Quality</label>
-                        <p className="text-foreground">{records.sleep_data.quality}</p>
+                        <p className="text-foreground">{record.sleep_data.quality}</p>
                       </div>
                     )}
-                    {records.sleep_data.bedtime && (
+                    {record.sleep_data.bedtime && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Bedtime</label>
-                        <p className="text-foreground">{records.sleep_data.bedtime}</p>
+                        <p className="text-foreground">{record.sleep_data.bedtime}</p>
                       </div>
                     )}
-                    {records.sleep_data.wakeTime && (
+                    {record.sleep_data.wakeTime && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Time</label>
-                        <p className="text-foreground">{records.sleep_data.wakeTime}</p>
+                        <p className="text-foreground">{record.sleep_data.wakeTime}</p>
                       </div>
                     )}
-                    {records.sleep_data.timeToSleep && (
+                    {record.sleep_data.timeToSleep && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Time to Fall Asleep</label>
-                        <p className="text-foreground">{records.sleep_data.timeToSleep} minutes</p>
+                        <p className="text-foreground">{record.sleep_data.timeToSleep} minutes</p>
                       </div>
                     )}
-                    {records.sleep_data.wokeUpDuringSleep && (
+                    {record.sleep_data.wokeUpDuringSleep && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Woke Up During Sleep</label>
                         <p className="text-foreground">Yes</p>
                       </div>
                     )}
-                    {records.sleep_data.wakeUpReason && (
+                    {record.sleep_data.wakeUpReason && (
                       <div>
                         <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Up Reason</label>
-                        <p className="text-foreground">{records.sleep_data.wakeUpReason}</p>
+                        <p className="text-foreground">{record.sleep_data.wakeUpReason}</p>
                       </div>
                     )}
                   </div>
-                  {records.sleep_data.notes && (
+                  {record.sleep_data.notes && (
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.sleep_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.sleep_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -264,7 +264,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Mood Record */}
-            {hasData(records.mood_data) && (
+            {hasData(record.mood_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -274,13 +274,13 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {['morning', 'afternoon', 'evening']
-                      .filter((period) => records.mood_data[period]?.mood)
+                      .filter((period) => record.mood_data[period]?.mood)
                       .map((period) => (
                         <div key={period} className="border rounded-lg p-3">
                           <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">{period}</label>
-                          <p className="text-foreground font-semibold">{records.mood_data[period].mood}</p>
-                          {records.mood_data[period].notes && (
-                            <p className="text-sm text-muted-foreground mt-2">{records.mood_data[period].notes}</p>
+                          <p className="text-foreground font-semibold">{record.mood_data[period].mood}</p>
+                          {record.mood_data[period].notes && (
+                            <p className="text-sm text-muted-foreground mt-2">{record.mood_data[period].notes}</p>
                           )}
                         </div>
                       ))}
@@ -290,7 +290,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Nutrition Record */}
-            {hasData(records.nutrition_data) && (
+            {hasData(record.nutrition_data) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -300,7 +300,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'nightSnack'].map((meal) => {
-                      const mealData = records.nutrition_data[meal];
+                      const mealData = record.nutrition_data[meal];
                       if (!mealData || !mealData.quality) return null;
                       
                       const mealLabels: { [key: string]: string } = {
@@ -326,16 +326,16 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       );
                     })}
                   </div>
-                  {records.nutrition_data.waterIntake && (
+                  {record.nutrition_data.waterIntake && (
                     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">Water Intake</label>
-                      <p className="text-foreground">{records.nutrition_data.waterIntake} ml</p>
+                      <p className="text-foreground">{record.nutrition_data.waterIntake} ml</p>
                     </div>
                   )}
-                  {records.nutrition_data.generalNotes && (
+                  {record.nutrition_data.generalNotes && (
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.nutrition_data.generalNotes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.nutrition_data.generalNotes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -343,8 +343,8 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Medication Record */}
-            {records.medication_data && Object.keys(records.medication_data).some(key => 
-              Array.isArray(records.medication_data[key]) && records.medication_data[key].length > 0
+            {record.medication_data && Object.keys(record.medication_data).some(key => 
+              Array.isArray(record.medication_data[key]) && record.medication_data[key].length > 0
             ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
@@ -354,7 +354,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   {['morning', 'afternoon', 'evening'].map((period) => {
-                    const meds = records.medication_data[period];
+                    const meds = record.medication_data[period];
                     if (!meds || meds.length === 0) return null;
                     
                     return (
@@ -378,10 +378,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
-                  {records.medication_data.notes && (
+                  {record.medication_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.medication_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.medication_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -389,8 +389,8 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Activities Record */}
-            {records.activity_data && Object.keys(records.activity_data).some(key => 
-              Array.isArray(records.activity_data[key]) && records.activity_data[key].length > 0
+            {record.activity_data && Object.keys(record.activity_data).some(key => 
+              Array.isArray(record.activity_data[key]) && record.activity_data[key].length > 0
             ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
@@ -400,7 +400,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   {['morning', 'afternoon', 'evening'].map((period) => {
-                    const activities = records.activity_data[period];
+                    const activities = record.activity_data[period];
                     if (!activities || activities.length === 0) return null;
                     
                     return (
@@ -429,10 +429,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
-                  {records.activity_data.notes && (
+                  {record.activity_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.activity_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.activity_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -440,8 +440,8 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Crisis Record */}
-            {records.crisis_data && Object.keys(records.crisis_data).some(key => 
-              Array.isArray(records.crisis_data[key]) && records.crisis_data[key].length > 0
+            {record.crisis_data && Object.keys(record.crisis_data).some(key => 
+              Array.isArray(record.crisis_data[key]) && record.crisis_data[key].length > 0
             ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
@@ -451,7 +451,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   {['morning', 'afternoon', 'evening'].map((period) => {
-                    const crises = records.crisis_data[period];
+                    const crises = record.crisis_data[period];
                     if (!crises || crises.length === 0) return null;
                     
                     return (
@@ -488,10 +488,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
-                  {records.crisis_data.notes && (
+                  {record.crisis_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.crisis_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.crisis_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -499,8 +499,8 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Incident Record */}
-            {records.incident_data && Object.keys(records.incident_data).some(key => 
-              Array.isArray(records.incident_data[key]) && records.incident_data[key].length > 0
+            {record.incident_data && Object.keys(record.incident_data).some(key => 
+              Array.isArray(record.incident_data[key]) && record.incident_data[key].length > 0
             ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
@@ -510,7 +510,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   {['morning', 'afternoon', 'evening'].map((period) => {
-                    const incidents = records.incident_data[period];
+                    const incidents = record.incident_data[period];
                     if (!incidents || incidents.length === 0) return null;
                     
                     return (
@@ -537,10 +537,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
-                  {records.incident_data.notes && (
+                  {record.incident_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.incident_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.incident_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -548,8 +548,8 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Hyperfocus Record */}
-            {records.hyperfocus_data && Object.keys(records.hyperfocus_data).some(key => 
-              Array.isArray(records.hyperfocus_data[key]) && records.hyperfocus_data[key].length > 0
+            {record.hyperfocus_data && Object.keys(record.hyperfocus_data).some(key => 
+              Array.isArray(record.hyperfocus_data[key]) && record.hyperfocus_data[key].length > 0
             ) && (
               <Card className="shadow-card border-border">
                 <CardHeader>
@@ -559,7 +559,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   {['morning', 'afternoon', 'evening'].map((period) => {
-                    const episodes = records.hyperfocus_data[period];
+                    const episodes = record.hyperfocus_data[period];
                     if (!episodes || episodes.length === 0) return null;
                     
                     return (
@@ -583,10 +583,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                       </div>
                     );
                   })}
-                  {records.hyperfocus_data.notes && (
+                  {record.hyperfocus_data.notes && (
                     <div className="mt-4 pt-4 border-t">
                       <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{records.hyperfocus_data.notes}</p>
+                      <p className="text-foreground whitespace-pre-wrap">{record.hyperfocus_data.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -594,7 +594,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             )}
 
             {/* Extra Notes */}
-            {records.extra_notes && (
+            {record.extra_notes && (
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -602,7 +602,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-foreground whitespace-pre-wrap">{records.extra_notes}</p>
+                  <p className="text-foreground whitespace-pre-wrap">{record.extra_notes}</p>
                 </CardContent>
               </Card>
             )}
