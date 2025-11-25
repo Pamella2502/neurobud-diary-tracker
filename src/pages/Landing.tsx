@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import neurobudLogo from "@/assets/neurobud-logo.png";
+import { memo } from "react";
 
-export default function Landing() {
+const Landing = memo(function Landing() {
   const navigate = useNavigate();
 
   const features = [
@@ -46,7 +47,10 @@ export default function Landing() {
               <img 
                 src={neurobudLogo} 
                 alt="NeuroBud Logo - Autism Diary and Progress Tracker" 
-                className="w-12 h-12 rounded-2xl shadow-card" 
+                className="w-12 h-12 rounded-2xl shadow-card"
+                width="48"
+                height="48"
+                loading="eager"
               />
               <span className="ml-3 text-2xl font-bold text-foreground">NeuroBud</span>
             </div>
@@ -167,4 +171,6 @@ export default function Landing() {
       </footer>
     </div>
   );
-}
+});
+
+export default Landing;
