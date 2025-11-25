@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Lock, Globe, CreditCard, Settings, Loader2, CheckCircle2 } from "lucide-react";
+import { AccessibilitySettings } from "@/components/AccessibilitySettings";
+import { User, Mail, Lock, Globe, CreditCard, Settings, Loader2, CheckCircle2, Eye } from "lucide-react";
 
-type SettingsSection = "profile" | "email" | "password" | "timezone" | "subscription" | "account";
+type SettingsSection = "profile" | "email" | "password" | "timezone" | "subscription" | "account" | "accessibility";
 
 export function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
@@ -47,6 +48,7 @@ export function SettingsPage() {
     { id: "email" as const, label: "Email", icon: Mail },
     { id: "password" as const, label: "Password", icon: Lock },
     { id: "timezone" as const, label: "Timezone", icon: Globe },
+    { id: "accessibility" as const, label: "Accessibility", icon: Eye },
     { id: "subscription" as const, label: "Subscription", icon: CreditCard },
     { id: "account" as const, label: "Account", icon: Settings },
   ];
@@ -127,6 +129,9 @@ export function SettingsPage() {
           </div>
         );
 
+      case "accessibility":
+        return <AccessibilitySettings />;
+
       case "subscription":
         return (
           <div className="space-y-6">
@@ -179,7 +184,10 @@ export function SettingsPage() {
           {/* Sidebar */}
           <Card className="lg:w-64 shadow-card border-border">
             <CardContent className="p-4">
-              <nav className="space-y-2">
+              <nav 
+                className="space-y-2"
+                aria-label="Settings navigation"
+              >
                 {settingsSections.map((section) => {
                   const Icon = section.icon;
                   return (
@@ -188,8 +196,10 @@ export function SettingsPage() {
                       variant={activeSection === section.id ? "secondary" : "ghost"}
                       className="w-full justify-start"
                       onClick={() => setActiveSection(section.id)}
+                      aria-current={activeSection === section.id ? "page" : undefined}
+                      aria-label={`${section.label} settings`}
                     >
-                      <Icon className="mr-3 h-4 w-4" />
+                      <Icon className="mr-3 h-4 w-4" aria-hidden="true" />
                       {section.label}
                     </Button>
                   );

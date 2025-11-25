@@ -36,14 +36,25 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-calm">
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-sm shadow-soft sticky top-0 z-50">
+      <header 
+        className="bg-card/80 backdrop-blur-sm shadow-soft sticky top-0 z-50"
+        role="banner"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <img src={neurobudLogo} alt="NeuroBud Logo" className="w-12 h-12 rounded-2xl shadow-card" />
+              <img 
+                src={neurobudLogo} 
+                alt="NeuroBud Logo - Autism Diary and Progress Tracker" 
+                className="w-12 h-12 rounded-2xl shadow-card" 
+              />
               <span className="ml-3 text-2xl font-bold text-foreground">NeuroBud</span>
             </div>
-            <Button onClick={() => navigate("/auth")} className="shadow-soft">
+            <Button 
+              onClick={() => navigate("/auth")} 
+              className="shadow-soft"
+              aria-label="Start your free trial of NeuroBud"
+            >
               Start Free Trial
             </Button>
           </div>

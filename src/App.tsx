@@ -14,6 +14,8 @@ import EmailVerified from "./pages/EmailVerified";
 import ExpiredLink from "./pages/ExpiredLink";
 import TermsOnboarding from "./components/TermsOnboarding";
 import { OfflineIndicator } from "./components/OfflineIndicator";
+import { SkipToContent } from "./components/SkipToContent";
+import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import { usePWAUpdate } from "./hooks/usePWAUpdate";
 import type { Session } from "@supabase/supabase-js";
 
@@ -190,25 +192,32 @@ const AppRoutes = () => {
 
   return (
     <>
+      <SkipToContent />
       {loading ? (
         <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div 
+              className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"
+              role="status"
+              aria-label="Loading application"
+            ></div>
             <p className="text-muted-foreground">Loading NeuroBud...</p>
           </div>
         </div>
       ) : session && userProfile && !userProfile.agreed_to_terms ? (
         <TermsOnboarding userId={session.user.id} />
       ) : (
-        <Routes>
-          <Route path="/" element={session ? <Navigate to="/dashboard" /> : <Landing />} />
-          <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
-          <Route path="/check-email" element={<CheckEmail />} />
-          <Route path="/email-verified" element={<EmailVerified />} />
-          <Route path="/expired-link" element={<ExpiredLink />} />
-          <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <main id="main-content" role="main">
+          <Routes>
+            <Route path="/" element={session ? <Navigate to="/dashboard" /> : <Landing />} />
+            <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            <Route path="/email-verified" element={<EmailVerified />} />
+            <Route path="/expired-link" element={<ExpiredLink />} />
+            <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
       )}
     </>
   );
@@ -219,14 +228,16 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <OfflineIndicator />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
+      <AccessibilityProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <OfflineIndicator />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AccessibilityProvider>
     </QueryClientProvider>
   );
 };
