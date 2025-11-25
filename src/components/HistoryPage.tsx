@@ -230,8 +230,9 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {['morning', 'afternoon', 'evening'].map((period) => (
-                      records.mood_data[period] && (
+                    {['morning', 'afternoon', 'evening']
+                      .filter((period) => records.mood_data[period])
+                      .map((period) => (
                         <div key={period} className="border rounded-lg p-3">
                           <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">{period}</label>
                           <p className="text-foreground font-semibold">{records.mood_data[period].mood || "Not recorded"}</p>
@@ -239,8 +240,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                             <p className="text-sm text-muted-foreground mt-2">{records.mood_data[period].notes}</p>
                           )}
                         </div>
-                      )
-                    ))}
+                      ))}
                   </div>
                 </CardContent>
               </Card>
