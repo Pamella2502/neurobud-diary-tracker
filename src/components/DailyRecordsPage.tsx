@@ -222,16 +222,74 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     "None",
     "Other Type",
   ];
-  const triggerTypes = [
-    "Sensory",
-    "Routine/Time",
-    "Physical",
-    "Emotional/Psychological",
-    "Social",
-    "Environment",
-    "Not identified",
-    "Other type",
-  ];
+  const triggerCategories = {
+    sensorial: {
+      label: "Sensorial",
+      subOptions: [
+        "Barulho alto",
+        "Luz forte",
+        "Cheiro forte",
+        "Textura de roupa ou objeto",
+        "Multidão / Ambiente agitado",
+      ],
+    },
+    rotina_tempo: {
+      label: "Rotina / Tempo",
+      subOptions: [
+        "Mudança inesperada na rotina",
+        "Atraso em uma atividade esperada",
+        "Transição entre atividades",
+        "Fim de algo que a criança gosta",
+      ],
+    },
+    fisico: {
+      label: "Físico",
+      subOptions: [
+        "Fome",
+        "Sede",
+        "Sono / cansaço",
+        "Dor ou desconforto",
+        "Doença (febre, gripe)",
+      ],
+    },
+    emocional_psicologico: {
+      label: "Emocional / Psicológico",
+      subOptions: [
+        "Frustração",
+        "Espera prolongada",
+        "Não conseguiu se comunicar",
+        "Não entendeu uma instrução",
+        "Contrariado (\"alguém disse não\")",
+      ],
+    },
+    social: {
+      label: "Social",
+      subOptions: [
+        "Interação com desconhecidos",
+        "Repreensão / bronca",
+        "Brincadeiras com outras crianças",
+        "Separação dos pais / cuidadores",
+        "Falta de atenção",
+      ],
+    },
+    ambiente: {
+      label: "Ambiente",
+      subOptions: [
+        "Lugar novo ou desconhecido",
+        "Mudança de temperatura (calor/frio)",
+        "Muito estímulo visual ou auditivo",
+        "Falta de estrutura / previsibilidade",
+      ],
+    },
+    nao_identificado: {
+      label: "Não identificado",
+      subOptions: [],
+    },
+    outro: {
+      label: "Outro",
+      subOptions: [],
+    },
+  };
   const incidentTypes = [
     "Routine change",
     "Excessive noise",
@@ -1328,39 +1386,88 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
 
                           <div className="md:col-span-2">
                             <Label>Triggers</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                              {triggerTypes.map((trigger) => (
-                                <div key={trigger} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`${period}-crisis-${index}-trigger-${trigger}`}
-                                    checked={crisis.triggers?.includes(trigger) || false}
-                                    onCheckedChange={(checked) => {
-                                      const currentTriggers = crisis.triggers || [];
-                                      const newTriggers = checked
-                                        ? [...currentTriggers, trigger]
-                                        : currentTriggers.filter((t) => t !== trigger);
-                                      updateCrisis(period, index, "triggers", newTriggers);
-                                    }}
-                                  />
-                                  <Label htmlFor={`${period}-crisis-${index}-trigger-${trigger}`} className="text-sm cursor-pointer">
-                                    {trigger}
-                                  </Label>
-                                </div>
-                              ))}
+                            <div className="space-y-4 mt-2">
+                              {Object.entries(triggerCategories).map(([categoryKey, category]) => {
+                                const isCategorySelected = crisis.triggers?.some((t) => t.startsWith(`${categoryKey}:`)) || false;
+                                
+                                return (
+                                  <div key={categoryKey} className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`${period}-crisis-${index}-trigger-cat-${categoryKey}`}
+                                        checked={isCategorySelected}
+                                        onCheckedChange={(checked) => {
+                                          const currentTriggers = crisis.triggers || [];
+                                          if (checked) {
+                                            // Add category marker if not present
+                                            updateCrisis(period, index, "triggers", [...currentTriggers, `${categoryKey}:`]);
+                                          } else {
+                                            // Remove all triggers from this category
+                                            const newTriggers = currentTriggers.filter((t) => !t.startsWith(`${categoryKey}:`));
+                                            updateCrisis(period, index, "triggers", newTriggers);
+                                          }
+                                        }}
+                                      />
+                                      <Label 
+                                        htmlFor={`${period}-crisis-${index}-trigger-cat-${categoryKey}`} 
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        {category.label}
+                                      </Label>
+                                    </div>
+                                    
+                                    {isCategorySelected && category.subOptions.length > 0 && (
+                                      <div className="ml-6 space-y-2 border-l-2 border-border pl-4">
+                                        {category.subOptions.map((subOption) => {
+                                          const triggerValue = `${categoryKey}:${subOption}`;
+                                          return (
+                                            <div key={subOption} className="flex items-center space-x-2">
+                                              <Checkbox
+                                                id={`${period}-crisis-${index}-trigger-${categoryKey}-${subOption}`}
+                                                checked={crisis.triggers?.includes(triggerValue) || false}
+                                                onCheckedChange={(checked) => {
+                                                  const currentTriggers = crisis.triggers || [];
+                                                  const categoryMarker = `${categoryKey}:`;
+                                                  const newTriggers = checked
+                                                    ? [...currentTriggers, triggerValue]
+                                                    : currentTriggers.filter((t) => t !== triggerValue);
+                                                  
+                                                  // Ensure category marker exists if we have sub-options selected
+                                                  const hasSubOptions = newTriggers.some((t) => t.startsWith(categoryKey) && t !== categoryMarker);
+                                                  if (hasSubOptions && !newTriggers.includes(categoryMarker)) {
+                                                    newTriggers.push(categoryMarker);
+                                                  }
+                                                  
+                                                  updateCrisis(period, index, "triggers", newTriggers);
+                                                }}
+                                              />
+                                              <Label 
+                                                htmlFor={`${period}-crisis-${index}-trigger-${categoryKey}-${subOption}`} 
+                                                className="text-sm cursor-pointer"
+                                              >
+                                                {subOption}
+                                              </Label>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    
+                                    {isCategorySelected && categoryKey === "outro" && (
+                                      <div className="ml-6">
+                                        <Input
+                                          className="mt-1"
+                                          placeholder="Descreva o gatilho..."
+                                          value={crisis.customTrigger || ""}
+                                          onChange={(e) => updateCrisis(period, index, "customTrigger", e.target.value)}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-
-                          {crisis.triggers?.includes("Other type") && (
-                            <div className="md:col-span-2">
-                              <Label>Specify Other Trigger</Label>
-                              <Input
-                                className="mt-1"
-                                placeholder="Describe the trigger..."
-                                value={crisis.customTrigger}
-                                onChange={(e) => updateCrisis(period, index, "customTrigger", e.target.value)}
-                              />
-                            </div>
-                          )}
 
                           <div className="md:col-span-2">
                             <Label>Calming Strategies</Label>
