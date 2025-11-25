@@ -125,7 +125,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Current Time</p>
                 <p className="text-lg font-bold text-primary">
-                  {currentTime.toLocaleTimeString('pt-BR', { 
+                  {currentTime.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit' 
@@ -148,7 +148,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             <CardContent className="p-12 text-center">
               <div className="text-6xl mb-6">📝</div>
               <h3 className="text-2xl font-bold text-foreground mb-3">
-                OS REGISTROS DO DIA VÃO APARECER AQUI QUANDO FOREM SALVOS
+                TODAY'S RECORDS WILL APPEAR HERE WHEN SAVED
               </h3>
               <p className="text-muted-foreground text-lg">
                 {formatDateInUserTimezone(todayDate)}

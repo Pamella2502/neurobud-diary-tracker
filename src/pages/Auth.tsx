@@ -112,13 +112,13 @@ export default function Auth() {
       if (error) throw error;
 
       toast({
-        title: "Email enviado!",
-        description: "Verifique seu email para redefinir sua senha.",
+        title: "Email sent!",
+        description: "Check your email to reset your password.",
       });
       setIsForgotPassword(false);
     } catch (error: any) {
       toast({
-        title: "Erro",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -247,10 +247,10 @@ export default function Auth() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
-          {isForgotPassword ? "Recuperar senha" : isLogin ? "Welcome back" : "Create your account"}
+          {isForgotPassword ? "Reset password" : isLogin ? "Welcome back" : "Create your account"}
         </h2>
         <p className="mt-2 text-center text-muted-foreground">
-          {isForgotPassword ? "Digite seu email para receber o link de recuperação" : isLogin ? "Sign in to continue tracking" : "Start your 3-day free trial"}
+          {isForgotPassword ? "Enter your email to receive the reset link" : isLogin ? "Sign in to continue tracking" : "Start your 3-day free trial"}
         </p>
       </div>
 
@@ -291,7 +291,7 @@ export default function Auth() {
                       onClick={() => setIsForgotPassword(true)}
                       className="text-sm text-primary hover:text-primary-hover underline"
                     >
-                      Esqueceu a senha?
+                      Forgot password?
                     </button>
                   </div>
                 )}
@@ -353,7 +353,7 @@ export default function Auth() {
 
             <Button type="submit" className="w-full" disabled={loading || (!isLogin && !isForgotPassword && !agreedToTerms)}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isForgotPassword ? "Enviar link de recuperação" : isLogin ? "Sign in" : "Create account"}
+              {isForgotPassword ? "Send reset link" : isLogin ? "Sign in" : "Create account"}
             </Button>
           </form>
 
@@ -406,7 +406,7 @@ export default function Auth() {
                 onClick={() => setIsForgotPassword(false)}
                 className="text-primary hover:text-primary-hover font-medium transition-colors"
               >
-                Voltar para login
+                Back to login
               </button>
             ) : (
               <button

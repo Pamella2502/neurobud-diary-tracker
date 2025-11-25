@@ -119,7 +119,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
       setReports(combinedReports);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erro ao carregar relatórios');
+      toast.error('Error loading reports');
     } finally {
       setLoading(false);
     }
@@ -127,18 +127,18 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
 
   const handleApplyFilter = () => {
     if (startDate && endDate && startDate > endDate) {
-      toast.error('Data inicial não pode ser maior que data final');
+      toast.error('Start date cannot be greater than end date');
       return;
     }
     fetchReports();
   };
 
   const handleExportPDF = (report: CombinedDayReport) => {
-    toast.info('Funcionalidade de exportação PDF em desenvolvimento');
+    toast.info('PDF export feature under development');
   };
 
   const handleSendEmail = (report: CombinedDayReport) => {
-    toast.info('Funcionalidade de envio por email em desenvolvimento');
+    toast.info('Email sending feature under development');
   };
 
   const getEvolutionIcon = (status: string) => {
@@ -155,11 +155,11 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
   const getEvolutionLabel = (status: string) => {
     switch (status) {
       case 'improved':
-        return 'Melhorou';
+        return 'Improved';
       case 'regressed':
-        return 'Piorou';
+        return 'Regressed';
       default:
-        return 'Neutro';
+        return 'Neutral';
     }
   };
 
@@ -191,8 +191,8 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
       <div className="p-6 md:p-8">
         <div className="max-w-4xl mx-auto text-center py-16">
           <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-2xl font-semibold text-foreground mb-2">Nenhuma Criança Selecionada</h3>
-          <p className="text-muted-foreground">Por favor, selecione uma criança para ver sua jornada</p>
+          <h3 className="text-2xl font-semibold text-foreground mb-2">No Child Selected</h3>
+          <p className="text-muted-foreground">Please select a child to view their journey</p>
         </div>
       </div>
     );
@@ -203,8 +203,8 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Jornada & Relatórios</h1>
-            <p className="text-muted-foreground">Relatórios automáticos para {selectedChild.name}</p>
+            <h1 className="text-3xl font-bold text-foreground">Journey & Reports</h1>
+            <p className="text-muted-foreground">Automatic reports for {selectedChild.name}</p>
           </div>
 
           <Select
@@ -233,10 +233,10 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
           <AlertDescription className="ml-2 text-foreground">
             <div className="space-y-2">
               <p className="font-bold text-lg">
-                A JORNADA DO DIA FICARÁ DISPONÍVEL AQUI ÀS 11:59PM.
+                TODAY'S JOURNEY WILL BE AVAILABLE HERE AT 11:59PM.
               </p>
               <p className="text-sm">
-                PARA CONSULTAR A JORNADA DE DIAS ANTERIORES, USE O FILTRO DE DATAS ABAIXO.
+                TO VIEW PREVIOUS DAYS' JOURNEYS, USE THE DATE FILTER BELOW.
               </p>
             </div>
           </AlertDescription>
@@ -245,10 +245,10 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
         {/* Date Range Filter */}
         <Card className="shadow-card border-border mb-8">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Filtrar por Período</h3>
+            <h3 className="text-lg font-semibold mb-4 text-foreground">Filter by Period</h3>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-muted-foreground mb-2">Data Inicial</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Start Date</label>
                 <Input
                   type="date"
                   value={startDate}
@@ -257,7 +257,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-muted-foreground mb-2">Data Final</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">End Date</label>
                 <Input
                   type="date"
                   value={endDate}
@@ -268,7 +268,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
               <div className="flex items-end">
                 <Button onClick={handleApplyFilter} className="w-full sm:w-auto">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  Aplicar Filtro
+                  Apply Filter
                 </Button>
               </div>
             </div>
@@ -278,16 +278,16 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
         {/* Reports List */}
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Carregando relatórios...</p>
+            <p className="text-muted-foreground">Loading reports...</p>
           </div>
         ) : reports.length === 0 ? (
           <Card className="shadow-card border-border">
             <CardContent className="p-6">
               <div className="text-center py-12">
                 <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h4 className="text-lg font-medium text-foreground mb-2">Nenhum Relatório Disponível</h4>
+                <h4 className="text-lg font-medium text-foreground mb-2">No Reports Available</h4>
                 <p className="text-muted-foreground">
-                  Os relatórios são gerados automaticamente às 11:59 PM todos os dias
+                  Reports are automatically generated at 11:59 PM every day
                 </p>
               </div>
             </CardContent>
@@ -299,7 +299,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
               <Card className="shadow-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    📈 Tendência de Evolução
+                    📈 Evolution Trend
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -315,7 +315,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                         stroke="hsl(var(--primary))" 
                         strokeWidth={2}
                         dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                        name="Pontuação"
+                        name="Score"
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -334,7 +334,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b">
                       <div>
                         <h2 className="text-2xl font-bold text-foreground mb-1">
-                          📊 Relatório Diário - {selectedChild.name}
+                          📊 Daily Report - {selectedChild.name}
                         </h2>
                         <h3 className="text-xl text-foreground mb-1">
                           {formatDateInUserTimezone(summary.summary_date)}
@@ -348,18 +348,18 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                         <div className={`text-4xl font-bold ${getScoreColor(summary.score)}`}>
                           {summary.score.toFixed(0)}/100
                         </div>
-                        <p className="text-sm text-muted-foreground">Pontuação do Dia</p>
+                        <p className="text-sm text-muted-foreground">Day's Score</p>
                       </div>
                     </div>
 
                     {/* Score Progress */}
                     <div className="mb-8">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-foreground">Progresso Geral</span>
+                        <span className="text-sm font-medium text-foreground">Overall Progress</span>
                         {summary.comparison_data.previous_score && (
                           <span className="text-sm text-muted-foreground">
                             {summary.comparison_data.score_difference! > 0 ? '↗️ +' : '↘️ '}
-                            {summary.comparison_data.score_difference?.toFixed(1)} pontos vs dia anterior
+                            {summary.comparison_data.score_difference?.toFixed(1)} points vs previous day
                           </span>
                         )}
                       </div>
@@ -370,7 +370,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                     {summary.alerts.length > 0 && (
                       <div className="mb-8">
                         <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          🚨 Alertas Automáticos
+                          🚨 Automatic Alerts
                         </h4>
                         <div className="space-y-2">
                           {summary.alerts.map((alert, idx) => (
@@ -387,7 +387,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                     {summary.insights.length > 0 && (
                       <div className="mb-8">
                         <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                          💡 Insights do Dia
+                          💡 Daily Insights
                         </h4>
                         <div className="space-y-2">
                           {summary.insights.map((insight, idx) => (
@@ -406,14 +406,14 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                     {/* Simple Indicators Section */}
                     {record && previousReport && (
                       <div className="mb-8">
-                        <h4 className="text-lg font-semibold text-foreground mb-4">📊 Indicadores de Tendência</h4>
+                        <h4 className="text-lg font-semibold text-foreground mb-4">📊 Trend Indicators</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                           {/* Score Trend */}
                           <Card className="border-muted">
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <p className="text-sm text-muted-foreground mb-1">Pontuação Geral</p>
+                                  <p className="text-sm text-muted-foreground mb-1">Overall Score</p>
                                   <p className="text-2xl font-bold text-foreground">{summary.score.toFixed(0)}</p>
                                 </div>
                                 <div className="text-3xl">
@@ -427,9 +427,9 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                           {record.sleep_data?.quality && previousReport?.record?.sleep_data?.quality && (
                             <Card className="border-muted">
                               <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Qualidade do Sono</p>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-muted-foreground mb-1">Sleep Quality</p>
                                     <p className="text-base font-semibold text-foreground">{record.sleep_data.quality}</p>
                                   </div>
                                   <div className="text-3xl">
@@ -452,12 +452,12 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Humor Geral</p>
-                                    <p className="text-base font-semibold text-foreground">
-                                      {['morning', 'afternoon', 'evening'].filter(p => record.mood_data[p]?.mood).length} registros
-                                    </p>
-                                  </div>
+                                   <div>
+                                     <p className="text-sm text-muted-foreground mb-1">Overall Mood</p>
+                                     <p className="text-base font-semibold text-foreground">
+                                       {['morning', 'afternoon', 'evening'].filter(p => record.mood_data[p]?.mood).length} records
+                                     </p>
+                                   </div>
                                   <div className="text-3xl">
                                     {(() => {
                                       const moodMap: { [key: string]: number } = {
@@ -488,15 +488,15 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                 <div className="flex items-center justify-between">
                                   <div>
                                     <p className="text-sm text-muted-foreground mb-1">Crises</p>
-                                    <p className="text-base font-semibold text-foreground">
-                                      {(() => {
-                                        let count = 0;
-                                        ['morning', 'afternoon', 'evening'].forEach(p => {
-                                          if (Array.isArray(record.crisis_data[p])) count += record.crisis_data[p].length;
-                                        });
-                                        return count;
-                                      })()} episódios
-                                    </p>
+                                     <p className="text-base font-semibold text-foreground">
+                                       {(() => {
+                                         let count = 0;
+                                         ['morning', 'afternoon', 'evening'].forEach(p => {
+                                           if (Array.isArray(record.crisis_data[p])) count += record.crisis_data[p].length;
+                                         });
+                                         return count;
+                                       })()} episodes
+                                     </p>
                                   </div>
                                   <div className="text-3xl">
                                     {(() => {
@@ -523,61 +523,61 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                     {/* Detailed Records Section */}
                     {record && (
                       <div className="mb-8">
-                        <h4 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b">📋 Registros Detalhados do Dia</h4>
+                        <h4 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b">📋 Detailed Daily Records</h4>
                         <div className="space-y-6">
                           {/* Sleep Record */}
                           {hasData(record.sleep_data) && (
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">💤</span> Sono
+                                  <span className="mr-2">💤</span> Sleep
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {record.sleep_data.quality && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Qualidade</label>
-                                      <p className="text-foreground">{record.sleep_data.quality}</p>
-                                    </div>
-                                  )}
-                                  {record.sleep_data.bedtime && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Horário de Dormir</label>
-                                      <p className="text-foreground">{record.sleep_data.bedtime}</p>
-                                    </div>
-                                  )}
-                                  {record.sleep_data.wakeTime && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Horário de Acordar</label>
-                                      <p className="text-foreground">{record.sleep_data.wakeTime}</p>
-                                    </div>
-                                  )}
-                                  {record.sleep_data.timeToSleep && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Tempo para Adormecer</label>
-                                      <p className="text-foreground">{record.sleep_data.timeToSleep} minutos</p>
-                                    </div>
-                                  )}
-                                  {record.sleep_data.wokeUpDuringSleep && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Acordou Durante o Sono</label>
-                                      <p className="text-foreground">Sim</p>
-                                    </div>
-                                  )}
-                                  {record.sleep_data.wakeUpReason && (
-                                    <div>
-                                      <label className="block text-sm font-medium text-muted-foreground mb-1">Motivo do Despertar</label>
-                                      <p className="text-foreground">{record.sleep_data.wakeUpReason}</p>
-                                    </div>
-                                  )}
-                                </div>
-                                {record.sleep_data.notes && (
-                                  <div className="mt-4">
-                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Observações</label>
-                                    <p className="text-foreground whitespace-pre-wrap">{record.sleep_data.notes}</p>
-                                  </div>
-                                )}
+                                   {record.sleep_data.quality && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Quality</label>
+                                       <p className="text-foreground">{record.sleep_data.quality}</p>
+                                     </div>
+                                   )}
+                                   {record.sleep_data.bedtime && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Bedtime</label>
+                                       <p className="text-foreground">{record.sleep_data.bedtime}</p>
+                                     </div>
+                                   )}
+                                   {record.sleep_data.wakeTime && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Time</label>
+                                       <p className="text-foreground">{record.sleep_data.wakeTime}</p>
+                                     </div>
+                                   )}
+                                   {record.sleep_data.timeToSleep && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Time to Fall Asleep</label>
+                                       <p className="text-foreground">{record.sleep_data.timeToSleep} minutes</p>
+                                     </div>
+                                   )}
+                                   {record.sleep_data.wokeUpDuringSleep && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Woke Up During Sleep</label>
+                                       <p className="text-foreground">Yes</p>
+                                     </div>
+                                   )}
+                                   {record.sleep_data.wakeUpReason && (
+                                     <div>
+                                       <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Up Reason</label>
+                                       <p className="text-foreground">{record.sleep_data.wakeUpReason}</p>
+                                     </div>
+                                   )}
+                                 </div>
+                                 {record.sleep_data.notes && (
+                                   <div className="mt-4">
+                                     <label className="block text-sm font-medium text-muted-foreground mb-1">Notes</label>
+                                     <p className="text-foreground whitespace-pre-wrap">{record.sleep_data.notes}</p>
+                                   </div>
+                                 )}
                               </CardContent>
                             </Card>
                           )}
@@ -587,24 +587,24 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">😊</span> Humor
+                                  <span className="mr-2">😊</span> Mood
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  {['morning', 'afternoon', 'evening'].map((period) => (
-                                    record.mood_data[period] && (
-                                      <div key={period} className="border rounded-lg p-3">
-                                        <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">
-                                          {period === 'morning' ? 'Manhã' : period === 'afternoon' ? 'Tarde' : 'Noite'}
-                                        </label>
-                                        <p className="text-foreground font-semibold">{record.mood_data[period].mood || "Não registrado"}</p>
-                                        {record.mood_data[period].notes && (
-                                          <p className="text-sm text-muted-foreground mt-2">{record.mood_data[period].notes}</p>
-                                        )}
-                                      </div>
-                                    )
-                                  ))}
+                                   {['morning', 'afternoon', 'evening'].map((period) => (
+                                     record.mood_data[period] && (
+                                       <div key={period} className="border rounded-lg p-3">
+                                         <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">
+                                           {period}
+                                         </label>
+                                         <p className="text-foreground font-semibold">{record.mood_data[period].mood || "Not recorded"}</p>
+                                         {record.mood_data[period].notes && (
+                                           <p className="text-sm text-muted-foreground mt-2">{record.mood_data[period].notes}</p>
+                                         )}
+                                       </div>
+                                     )
+                                   ))}
                                 </div>
                               </CardContent>
                             </Card>
@@ -615,7 +615,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">🍎</span> Nutrição
+                                  <span className="mr-2">🍎</span> Nutrition
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -623,26 +623,26 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                   {['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'nightSnack'].map((meal) => {
                                     const mealData = record.nutrition_data[meal];
                                     if (!mealData || !mealData.quality) return null;
-                                    
-                                    const mealLabels: { [key: string]: string } = {
-                                      breakfast: 'Café da Manhã',
-                                      morningSnack: 'Lanche da Manhã',
-                                      lunch: 'Almoço',
-                                      afternoonSnack: 'Lanche da Tarde',
-                                      dinner: 'Jantar',
-                                      nightSnack: 'Ceia'
-                                    };
+                                     
+                                     const mealLabels: { [key: string]: string } = {
+                                       breakfast: 'Breakfast',
+                                       morningSnack: 'Morning Snack',
+                                       lunch: 'Lunch',
+                                       afternoonSnack: 'Afternoon Snack',
+                                       dinner: 'Dinner',
+                                       nightSnack: 'Night Snack'
+                                     };
                                     
                                     return (
                                       <div key={meal} className="border rounded-lg p-3">
                                         <label className="block text-sm font-medium text-muted-foreground mb-2">{mealLabels[meal]}</label>
                                         <p className="text-foreground font-semibold mb-1">{mealData.quality}</p>
-                                        {mealData.foods && mealData.foods.length > 0 && (
-                                          <p className="text-xs text-muted-foreground mb-1">Categorias: {mealData.foods.join(', ')}</p>
-                                        )}
-                                        {mealData.waterIntake && (
-                                          <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">💧 Água: {mealData.waterIntake}ml</p>
-                                        )}
+                                         {mealData.foods && mealData.foods.length > 0 && (
+                                           <p className="text-xs text-muted-foreground mb-1">Categories: {mealData.foods.join(', ')}</p>
+                                         )}
+                                         {mealData.waterIntake && (
+                                           <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">💧 Water: {mealData.waterIntake}ml</p>
+                                         )}
                                         {mealData.notes && (
                                           <p className="text-sm text-muted-foreground mt-1">{mealData.notes}</p>
                                         )}
@@ -650,12 +650,12 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                     );
                                   })}
                                 </div>
-                                {record.nutrition_data.generalNotes && (
-                                  <div className="mt-4">
-                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Observações Gerais</label>
-                                    <p className="text-foreground whitespace-pre-wrap">{record.nutrition_data.generalNotes}</p>
-                                  </div>
-                                )}
+                                 {record.nutrition_data.generalNotes && (
+                                   <div className="mt-4">
+                                     <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
+                                     <p className="text-foreground whitespace-pre-wrap">{record.nutrition_data.generalNotes}</p>
+                                   </div>
+                                 )}
                               </CardContent>
                             </Card>
                           )}
@@ -667,7 +667,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">⚠️</span> Crises e Episódios
+                                  <span className="mr-2">⚠️</span> Crises and Episodes
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -675,29 +675,29 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                   const crises = record.crisis_data[period];
                                   if (!crises || crises.length === 0) return null;
                                   
-                                  return (
-                                    <div key={period} className="mb-6 last:mb-0">
-                                      <h4 className="font-medium text-foreground mb-3 capitalize">
-                                        {period === 'morning' ? 'Manhã' : period === 'afternoon' ? 'Tarde' : 'Noite'}
-                                      </h4>
+                                   return (
+                                     <div key={period} className="mb-6 last:mb-0">
+                                       <h4 className="font-medium text-foreground mb-3 capitalize">
+                                         {period}
+                                       </h4>
                                       <div className="space-y-3">
                                         {crises.map((crisis: any, idx: number) => (
                                           <div key={idx} className="border rounded-lg p-3 bg-orange-50 dark:bg-orange-950/10">
-                                            <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                                              {crisis.severity && <div><span className="text-muted-foreground">Gravidade:</span> {crisis.severity}</div>}
-                                              {crisis.duration && <div><span className="text-muted-foreground">Duração:</span> {crisis.duration}</div>}
-                                              {crisis.context && <div className="col-span-2"><span className="text-muted-foreground">Contexto:</span> {crisis.context}</div>}
-                                            </div>
-                                            {crisis.triggers && crisis.triggers.length > 0 && (
-                                              <div className="text-sm mb-2">
-                                                <span className="text-muted-foreground">Gatilhos:</span> {crisis.triggers.join(', ')}
-                                              </div>
-                                            )}
-                                            {crisis.interventions && crisis.interventions.length > 0 && (
-                                              <div className="text-sm mb-2">
-                                                <span className="text-muted-foreground">Intervenções:</span> {crisis.interventions.join(', ')}
-                                              </div>
-                                            )}
+                                             <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                                               {crisis.severity && <div><span className="text-muted-foreground">Severity:</span> {crisis.severity}</div>}
+                                               {crisis.duration && <div><span className="text-muted-foreground">Duration:</span> {crisis.duration}</div>}
+                                               {crisis.context && <div className="col-span-2"><span className="text-muted-foreground">Context:</span> {crisis.context}</div>}
+                                             </div>
+                                             {crisis.triggers && crisis.triggers.length > 0 && (
+                                               <div className="text-sm mb-2">
+                                                 <span className="text-muted-foreground">Triggers:</span> {crisis.triggers.join(', ')}
+                                               </div>
+                                             )}
+                                             {crisis.interventions && crisis.interventions.length > 0 && (
+                                               <div className="text-sm mb-2">
+                                                 <span className="text-muted-foreground">Interventions:</span> {crisis.interventions.join(', ')}
+                                               </div>
+                                             )}
                                             {crisis.notes && (
                                               <p className="text-sm text-muted-foreground">{crisis.notes}</p>
                                             )}
@@ -718,7 +718,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">🎯</span> Atividades & Terapias
+                                  <span className="mr-2">🎯</span> Activities & Therapies
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -726,25 +726,25 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                   const activities = record.activity_data[period];
                                   if (!activities || activities.length === 0) return null;
                                   
-                                  return (
-                                    <div key={period} className="mb-6 last:mb-0">
-                                      <h4 className="font-medium text-foreground mb-3 capitalize">
-                                        {period === 'morning' ? 'Manhã' : period === 'afternoon' ? 'Tarde' : 'Noite'}
-                                      </h4>
+                                   return (
+                                     <div key={period} className="mb-6 last:mb-0">
+                                       <h4 className="font-medium text-foreground mb-3 capitalize">
+                                         {period}
+                                       </h4>
                                       <div className="space-y-3">
                                         {activities.map((activity: any, idx: number) => (
                                           <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                                            <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                                              {activity.type && <div><span className="text-muted-foreground">Tipo:</span> {activity.type}</div>}
-                                              {activity.name && <div><span className="text-muted-foreground">Atividade:</span> {activity.name}</div>}
-                                              {activity.duration && <div><span className="text-muted-foreground">Duração:</span> {activity.duration} min</div>}
-                                              {activity.participation && <div><span className="text-muted-foreground">Participação:</span> {activity.participation}</div>}
-                                            </div>
-                                            {activity.skills && activity.skills.length > 0 && (
-                                              <div className="text-sm mb-2">
-                                                <span className="text-muted-foreground">Habilidades praticadas:</span> {activity.skills.join(', ')}
-                                              </div>
-                                            )}
+                                             <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                                               {activity.type && <div><span className="text-muted-foreground">Type:</span> {activity.type}</div>}
+                                               {activity.name && <div><span className="text-muted-foreground">Activity:</span> {activity.name}</div>}
+                                               {activity.duration && <div><span className="text-muted-foreground">Duration:</span> {activity.duration} min</div>}
+                                               {activity.participation && <div><span className="text-muted-foreground">Participation:</span> {activity.participation}</div>}
+                                             </div>
+                                             {activity.skills && activity.skills.length > 0 && (
+                                               <div className="text-sm mb-2">
+                                                 <span className="text-muted-foreground">Skills practiced:</span> {activity.skills.join(', ')}
+                                               </div>
+                                             )}
                                             {activity.observations && (
                                               <p className="text-sm text-muted-foreground">{activity.observations}</p>
                                             )}
@@ -765,7 +765,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">💊</span> Medicação
+                                  <span className="mr-2">💊</span> Medication
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -773,23 +773,23 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                                   const meds = record.medication_data[period];
                                   if (!meds || meds.length === 0) return null;
                                   
-                                  return (
-                                    <div key={period} className="mb-6 last:mb-0">
-                                      <h4 className="font-medium text-foreground mb-3 capitalize">
-                                        {period === 'morning' ? 'Manhã' : period === 'afternoon' ? 'Tarde' : 'Noite'}
-                                      </h4>
+                                   return (
+                                     <div key={period} className="mb-6 last:mb-0">
+                                       <h4 className="font-medium text-foreground mb-3 capitalize">
+                                         {period}
+                                       </h4>
                                       <div className="space-y-3">
                                         {meds.map((med: any, idx: number) => (
                                           <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                              {med.type && <div><span className="text-muted-foreground">Tipo:</span> {med.type}</div>}
-                                              {med.name && <div><span className="text-muted-foreground">Nome:</span> {med.name}</div>}
-                                              {med.dosage && <div><span className="text-muted-foreground">Dosagem:</span> {med.dosage}</div>}
-                                              {med.time && <div><span className="text-muted-foreground">Horário:</span> {med.time}</div>}
-                                            </div>
-                                            {med.sideEffects && (
-                                              <p className="text-sm text-muted-foreground mt-2">Efeitos colaterais: {med.sideEffects}</p>
-                                            )}
+                                             <div className="grid grid-cols-2 gap-2 text-sm">
+                                               {med.type && <div><span className="text-muted-foreground">Type:</span> {med.type}</div>}
+                                               {med.name && <div><span className="text-muted-foreground">Name:</span> {med.name}</div>}
+                                               {med.dosage && <div><span className="text-muted-foreground">Dosage:</span> {med.dosage}</div>}
+                                               {med.time && <div><span className="text-muted-foreground">Time:</span> {med.time}</div>}
+                                             </div>
+                                             {med.sideEffects && (
+                                               <p className="text-sm text-muted-foreground mt-2">Side effects: {med.sideEffects}</p>
+                                             )}
                                           </div>
                                         ))}
                                       </div>
@@ -805,7 +805,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                             <Card className="border-muted">
                               <CardHeader>
                                 <CardTitle className="flex items-center text-base">
-                                  <span className="mr-2">📝</span> Observações Gerais
+                                  <span className="mr-2">📝</span> General Notes
                                 </CardTitle>
                               </CardHeader>
                               <CardContent>
@@ -825,7 +825,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                         onClick={() => handleExportPDF(report)}
                       >
                         <FileDown className="mr-2 h-4 w-4" />
-                        Baixar PDF
+                        Download PDF
                       </Button>
                       <Button
                         variant="outline"
@@ -833,7 +833,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                         onClick={() => handleSendEmail(report)}
                       >
                         <Mail className="mr-2 h-4 w-4" />
-                        Enviar por Email
+                        Send by Email
                       </Button>
                     </div>
                   </CardContent>

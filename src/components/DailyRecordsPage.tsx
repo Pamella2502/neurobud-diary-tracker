@@ -649,7 +649,7 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                   {formatDateInUserTimezone(getTodayInUserTimezone())}
                 </p>
                 <p className="text-lg font-bold text-primary">
-                  {currentTime.toLocaleTimeString('pt-BR', { 
+                  {currentTime.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit' 
