@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VirtualizedList } from "./VirtualizedList";
+import { BackToTop } from "./BackToTop";
+import { SkeletonCard } from "./SkeletonCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -130,6 +132,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
   return (
     <div className="p-6 md:p-8">
+      <BackToTop />
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -191,13 +194,18 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
           </CardContent>
         </Card>
 
-        {loading ? (
-          <Card className="shadow-card border-border">
-            <CardContent className="p-8 text-center">
-              <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading records...</p>
-            </CardContent>
-          </Card>
+        {loading && records.length === 0 ? (
+          <div 
+            className="space-y-4"
+            role="status"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <span className="sr-only">Loading records...</span>
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} variant="record" />
+            ))}
+          </div>
         ) : records.length === 0 ? (
           <Card className="shadow-card border-border">
             <CardContent className="p-12 text-center">

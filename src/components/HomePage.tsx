@@ -1,12 +1,23 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, FileText, TrendingUp, FileDown } from "lucide-react";
 import { PWAInstallPrompt } from "./PWAInstallPrompt";
+import { BackToTop } from "./BackToTop";
+import { SkeletonCard } from "./SkeletonCard";
+import { useState, useEffect } from "react";
 
 type HomePageProps = {
   childrenCount: number;
 };
 
 export function HomePage({ childrenCount }: HomePageProps) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial load
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   const stats = [
     { label: "Children Registered", value: childrenCount, color: "primary", icon: Users },
     { label: "Today's Records", value: "0", color: "success", icon: FileText },
@@ -22,6 +33,7 @@ export function HomePage({ childrenCount }: HomePageProps) {
 
   return (
     <div className="p-6 md:p-8">
+      <BackToTop />
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">Welcome to NeuroBud!</h1>
@@ -33,8 +45,19 @@ export function HomePage({ childrenCount }: HomePageProps) {
         {/* Quick Stats */}
         <section aria-labelledby="stats-heading">
           <h2 id="stats-heading" className="sr-only">Quick Statistics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {stats.map((stat, index) => {
+          <div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            aria-busy={isLoading}
+            role="status"
+          >
+            {isLoading ? (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <SkeletonCard key={i} variant="stat" />
+                ))}
+              </>
+            ) : (
+              stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
                 <Card 
@@ -64,7 +87,8 @@ export function HomePage({ childrenCount }: HomePageProps) {
                   </CardContent>
                 </Card>
               );
-            })}
+            })
+            )}
           </div>
         </section>
 
