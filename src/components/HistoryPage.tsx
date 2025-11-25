@@ -103,8 +103,6 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   const [currentTime, setCurrentTime] = useState(new Date());
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,16 +160,14 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
       setLoading(true);
     }
     
+    const today = getTodayInUserTimezone();
     let query = supabase
       .from("daily_records")
       .select("*", { count: 'exact' })
       .eq("child_id", selectedChild.id)
+      .eq("record_date", today)
       .order("record_date", { ascending: false })
       .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
-
-    if (startDate && endDate) {
-      query = query.gte("record_date", startDate).lte("record_date", endDate);
-    }
 
     const { data, error, count } = await query;
 
@@ -184,7 +180,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
       setPage(pageNum);
     }
     setLoading(false);
-  }, [selectedChild, startDate, endDate, PAGE_SIZE]);
+  }, [selectedChild, PAGE_SIZE]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -206,7 +202,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
       setHasMore(true);
       fetchRecords(0, false);
     }
-  }, [selectedChild, startDate, endDate]);
+  }, [selectedChild]);
 
   if (!selectedChild) {
     return (
@@ -282,20 +278,6 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             </CardContent>
           </Card>
 
-          <Card className="mb-6 border-border">
-            <CardContent className={isCompactView ? "p-3" : "p-4"}>
-              <div className="flex gap-4">
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start Date" />
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End Date" />
-                <Button onClick={() => {
-                  setPage(0);
-                  setRecords([]);
-                  setHasMore(true);
-                  fetchRecords(0, false);
-                }}>Apply</Button>
-              </div>
-            </CardContent>
-          </Card>
 
           {loading && records.length === 0 ? (
             <div 
@@ -341,7 +323,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                     <CardContent className={isCompactView ? "p-3 space-y-3" : "p-6 space-y-6"}>
                       {record.sleep_data && hasData(record.sleep_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Sleep Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>😴 Sleep</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Bedtime:</strong> {record.sleep_data.bedtime}</p>
                             <p><strong>Wake Up:</strong> {record.sleep_data.wake_up}</p>
@@ -354,7 +336,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.mood_data && hasData(record.mood_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Mood Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>😊 Mood</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Mood Level:</strong> {record.mood_data.mood_level}</p>
                             <p><strong>Factors:</strong> {record.mood_data.factors}</p>
@@ -365,7 +347,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.nutrition_data && hasData(record.nutrition_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Nutrition Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>🍎 Nutrition</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Meals:</strong> {record.nutrition_data.meals}</p>
                             <p><strong>Snacks:</strong> {record.nutrition_data.snacks}</p>
@@ -377,7 +359,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.medication_data && hasData(record.medication_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Medication Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>💊 Medication</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Medications:</strong> {record.medication_data.medications}</p>
                             <p><strong>Dosage:</strong> {record.medication_data.dosage}</p>
@@ -389,7 +371,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.activity_data && hasData(record.activity_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Activity Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>🏃 Activities</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Activity Type:</strong> {record.activity_data.activity_type}</p>
                             <p><strong>Duration:</strong> {record.activity_data.duration} minutes</p>
@@ -401,9 +383,24 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.crisis_data && hasData(record.crisis_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Crisis Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>🚨 Crises</h4>
                           <div className="text-muted-foreground">
-                            <p><strong>Triggers:</strong> {record.crisis_data.triggers}</p>
+                            <p><strong>Triggers:</strong> {Array.isArray(record.crisis_data.triggers) 
+                              ? record.crisis_data.triggers.map((t: string) => {
+                                  const [category, subOption] = t.split(':');
+                                  const translations: Record<string, string> = {
+                                    'sensorial': 'Sensory',
+                                    'rotina_tempo': 'Routine/Time',
+                                    'fisico': 'Physical',
+                                    'emocional_psicologico': 'Emotional/Psychological',
+                                    'social': 'Social',
+                                    'ambiente': 'Environment',
+                                    'nao_identificado': 'Not Identified',
+                                    'outro': 'Other'
+                                  };
+                                  return subOption ? `${translations[category] || category}: ${subOption}` : translations[category] || category;
+                                }).join(', ')
+                              : record.crisis_data.triggers}</p>
                             <p><strong>Strategies:</strong> {record.crisis_data.strategies}</p>
                             <p><strong>Outcome:</strong> {record.crisis_data.outcome}</p>
                             <p><strong>Notes:</strong> {record.crisis_data.notes}</p>
@@ -413,7 +410,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.incident_data && hasData(record.incident_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Incident Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>🔄 Unexpected Occurrences</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Type:</strong> {record.incident_data.type}</p>
                             <p><strong>Description:</strong> {record.incident_data.description}</p>
@@ -425,7 +422,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
 
                       {record.hyperfocus_data && hasData(record.hyperfocus_data) && (
                         <div className="mb-4">
-                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Hyperfocus Data</h4>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>🎯 Hyperfocus</h4>
                           <div className="text-muted-foreground">
                             <p><strong>Topic:</strong> {record.hyperfocus_data.topic}</p>
                             <p><strong>Duration:</strong> {record.hyperfocus_data.duration} minutes</p>
