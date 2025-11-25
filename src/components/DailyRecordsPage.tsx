@@ -12,6 +12,7 @@ import { Loader2, AlertCircle, Save, Plus, X, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Child } from "@/pages/Dashboard";
 import { formatDateInUserTimezone, getTodayInUserTimezone } from "@/lib/timezone";
+import { useOptimisticUpdate } from "@/hooks/useOptimisticUpdate";
 
 type DailyRecordsPageProps = {
   children: Child[];
@@ -125,6 +126,7 @@ type RecordsState = {
 
 export function DailyRecordsPage({ children, selectedChild, onSelectChild }: DailyRecordsPageProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [originalRecords, setOriginalRecords] = useState<RecordsState | null>(null);
   const [records, setRecords] = useState<RecordsState>({
     sleep: {
       quality: "",
@@ -286,6 +288,41 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }
   };
 
+  const { performUpdate } = useOptimisticUpdate({
+    onUpdate: async (data: RecordsState) => {
+      if (!selectedChild) throw new Error("No child selected");
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const today = getTodayInUserTimezone();
+
+      const { error } = await supabase.from("daily_records").upsert(
+        {
+          child_id: selectedChild.id,
+          record_date: today,
+          user_id: user.id,
+          sleep_data: data.sleep,
+          mood_data: data.mood,
+          nutrition_data: data.nutrition,
+          medication_data: data.medication,
+          activity_data: data.activities,
+          crisis_data: data.crises,
+          incident_data: data.incidents,
+          hyperfocus_data: data.hyperfocus,
+          extra_notes: data.extraNotes,
+        },
+        {
+          onConflict: "child_id,record_date",
+        }
+      );
+
+      if (error) throw error;
+    },
+    successMessage: `Records saved successfully for ${selectedChild?.name}!`,
+    errorMessage: "Failed to save records. Please try again.",
+  });
+
   const saveRecords = async () => {
     if (!selectedChild) {
       toast({
@@ -297,43 +334,22 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
     }
 
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    
+    // Store original state for potential revert
+    setOriginalRecords({ ...records });
 
-    const today = getTodayInUserTimezone();
-
-    const { error } = await supabase.from("daily_records").upsert(
-      {
-        child_id: selectedChild.id,
-        record_date: today,
-        user_id: user.id,
-        sleep_data: records.sleep,
-        mood_data: records.mood,
-        nutrition_data: records.nutrition,
-        medication_data: records.medication,
-        activity_data: records.activities,
-        crisis_data: records.crises,
-        incident_data: records.incidents,
-        hyperfocus_data: records.hyperfocus,
-        extra_notes: records.extraNotes,
-      },
-      {
-        onConflict: "child_id,record_date",
+    await performUpdate(
+      records,
+      // Optimistic update (already applied)
+      () => {},
+      // Revert on error
+      () => {
+        if (originalRecords) {
+          setRecords(originalRecords);
+        }
       }
     );
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: `Records saved successfully for ${selectedChild.name}!`,
-      });
-    }
     setSaving(false);
   };
 
