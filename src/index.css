@@ -293,21 +293,11 @@ a:not([class*="button"]) {
   }
 }
 
-/* Compact view styles */
+/* Compact view styles - using direct values to avoid circular dependency */
 .compact-view {
-  @apply transition-all duration-200;
-}
-
-.compact-view .space-y-6 {
-  @apply space-y-3;
-}
-
-.compact-view .space-y-3 {
-  @apply space-y-2;
-}
-
-.compact-view .space-y-2 {
-  @apply space-y-1;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
