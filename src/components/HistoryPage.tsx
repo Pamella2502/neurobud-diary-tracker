@@ -3,13 +3,71 @@ import { supabase } from "@/integrations/supabase/client";
 import { VirtualizedList } from "./VirtualizedList";
 import { BackToTop } from "./BackToTop";
 import { SkeletonCard } from "./SkeletonCard";
+import { PullToRefresh } from "./PullToRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Clock, LayoutGrid, List } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 import { getTodayInUserTimezone, formatDateInUserTimezone } from "@/lib/timezone";
+
+// Define types for the data structures
+type SleepData = {
+  bedtime: string;
+  wake_up: string;
+  total_sleep: number;
+  quality: string;
+  notes: string;
+};
+
+type MoodData = {
+  mood_level: number;
+  factors: string;
+  notes: string;
+};
+
+type NutritionData = {
+  meals: string;
+  snacks: string;
+  hydration: string;
+  notes: string;
+};
+
+type MedicationData = {
+  medications: string;
+  dosage: string;
+  time: string;
+  notes: string;
+};
+
+type ActivityData = {
+  activity_type: string;
+  duration: number;
+  intensity: string;
+  notes: string;
+};
+
+type CrisisData = {
+  triggers: string;
+  strategies: string;
+  outcome: string;
+  notes: string;
+};
+
+type IncidentData = {
+  type: string;
+  description: string;
+  resolution: string;
+  notes: string;
+};
+
+type HyperfocusData = {
+  topic: string;
+  duration: number;
+  outcome: string;
+  notes: string;
+};
 
 type HistoryPageProps = {
   children: Child[];
@@ -31,11 +89,9 @@ type DailyRecord = {
   extra_notes: string;
 };
 
-// Helper function to check if an object has any meaningful data
 const hasData = (obj: any): boolean => {
   if (!obj || typeof obj !== 'object') return false;
   
-  // Check if any value in the object is truthy and not an empty array/object
   return Object.values(obj).some(value => {
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object' && value !== null) return hasData(value);
@@ -55,6 +111,30 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   const [containerHeight, setContainerHeight] = useState(600);
   const todayDate = getTodayInUserTimezone();
   const PAGE_SIZE = 20;
+  const [isCompactView, setIsCompactView] = useState(() => {
+    const saved = localStorage.getItem("historyViewMode");
+    return saved === "compact";
+  });
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const toggleViewMode = () => {
+    const newMode = !isCompactView;
+    setIsCompactView(newMode);
+    localStorage.setItem("historyViewMode", newMode ? "compact" : "normal");
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,7 +158,10 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   const fetchRecords = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     if (!selectedChild) return;
 
-    setLoading(true);
+    if (!append) {
+      setLoading(true);
+    }
+    
     let query = supabase
       .from("daily_records")
       .select("*", { count: 'exact' })
@@ -109,6 +192,13 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
     }
   }, [loading, hasMore, page, fetchRecords]);
 
+  const handleRefresh = async () => {
+    setPage(0);
+    setRecords([]);
+    setHasMore(true);
+    await fetchRecords(0, false);
+  };
+
   useEffect(() => {
     if (selectedChild) {
       setPage(0);
@@ -131,517 +221,236 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   }
 
   return (
-    <div className="p-6 md:p-8">
-      <BackToTop />
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">History</h1>
-            <p className="text-muted-foreground">Today's records for {selectedChild.name}</p>
+    <PullToRefresh onRefresh={handleRefresh} isOffline={isOffline}>
+      <div className="p-6 md:p-8">
+        <BackToTop />
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">History</h1>
+              <p className="text-muted-foreground">Today's records for {selectedChild.name}</p>
+            </div>
+
+            <div className="flex gap-2 mt-4 sm:mt-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleViewMode}
+                aria-label={isCompactView ? "Switch to normal view" : "Switch to compact view"}
+                className="gap-2"
+              >
+                {isCompactView ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                {isCompactView ? "Normal" : "Compact"}
+              </Button>
+
+              <Select
+                value={selectedChild?.id || ""}
+                onValueChange={(value) => {
+                  const child = children.find((c) => c.id === value);
+                  if (child) onSelectChild(child);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {children.map((child) => (
+                    <SelectItem key={child.id} value={child.id}>
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <Select
-            value={selectedChild?.id || ""}
-            onValueChange={(value) => {
-              const child = children.find((c) => c.id === value);
-              if (child) onSelectChild(child);
-            }}
-          >
-            <SelectTrigger className="mt-4 sm:mt-0 w-full sm:w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {children.map((child) => (
-                <SelectItem key={child.id} value={child.id}>
-                  {child.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Time Card */}
-        <Card className="mb-6 border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Current Time</p>
-                <p className="text-lg font-bold text-primary">
-                  {currentTime.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit' 
-                  })}
-                </p>
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardContent className={isCompactView ? "p-3" : "p-4"}>
+              <div className="flex items-center gap-3">
+                <Clock className={isCompactView ? "h-4 w-4 text-primary" : "h-5 w-5 text-primary"} />
+                <div>
+                  <p className={`font-medium text-muted-foreground ${isCompactView ? "text-xs" : "text-sm"}`}>Current Time</p>
+                  <p className={`font-bold text-primary ${isCompactView ? "text-base" : "text-lg"}`}>
+                    {currentTime.toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit', 
+                      second: '2-digit' 
+                    })}
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6 border-border">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start Date" />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End Date" />
-              <Button onClick={() => {
-                setPage(0);
-                setRecords([]);
-                setHasMore(true);
-                fetchRecords(0, false);
-              }}>Apply</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {loading && records.length === 0 ? (
-          <div 
-            className="space-y-4"
-            role="status"
-            aria-busy="true"
-            aria-live="polite"
-          >
-            <span className="sr-only">Loading records...</span>
-            {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} variant="record" />
-            ))}
-          </div>
-        ) : records.length === 0 ? (
-          <Card className="shadow-card border-border">
-            <CardContent className="p-12 text-center">
-              <div className="text-6xl mb-6">📝</div>
-              <h3 className="text-2xl font-bold text-foreground mb-3">
-                TODAY'S RECORDS WILL APPEAR HERE WHEN SAVED
-              </h3>
-              <p className="text-muted-foreground text-lg">
-                {formatDateInUserTimezone(todayDate)}
-              </p>
             </CardContent>
           </Card>
-        ) : (
-          <div ref={containerRef}>
-            <VirtualizedList
-              items={records}
-              estimatedItemHeight={800}
-              containerHeight={containerHeight}
-              overscan={1}
-              onLoadMore={loadMore}
-              hasMore={hasMore}
-              isLoading={loading}
-              renderItem={(record) => (
-                <div className="space-y-6 p-4">
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
-              <p className="text-sm text-foreground">
-                <strong>Record Date:</strong> {formatDateInUserTimezone(record.record_date)}
-              </p>
+
+          <Card className="mb-6 border-border">
+            <CardContent className={isCompactView ? "p-3" : "p-4"}>
+              <div className="flex gap-4">
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start Date" />
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End Date" />
+                <Button onClick={() => {
+                  setPage(0);
+                  setRecords([]);
+                  setHasMore(true);
+                  fetchRecords(0, false);
+                }}>Apply</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {loading && records.length === 0 ? (
+            <div 
+              className="space-y-4"
+              role="status"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <span className="sr-only">Loading records...</span>
+              {[1, 2, 3].map((i) => (
+                <SkeletonCard key={i} variant="record" />
+              ))}
             </div>
-
-            {/* Sleep Record */}
-            {hasData(record.sleep_data) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">😴</span> Sleep
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {record.sleep_data.quality && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Quality</label>
-                        <p className="text-foreground">{record.sleep_data.quality}</p>
-                      </div>
-                    )}
-                    {record.sleep_data.bedtime && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Bedtime</label>
-                        <p className="text-foreground">{record.sleep_data.bedtime}</p>
-                      </div>
-                    )}
-                    {record.sleep_data.wakeTime && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Time</label>
-                        <p className="text-foreground">{record.sleep_data.wakeTime}</p>
-                      </div>
-                    )}
-                    {record.sleep_data.timeToSleep && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Time to Fall Asleep</label>
-                        <p className="text-foreground">{record.sleep_data.timeToSleep} minutes</p>
-                      </div>
-                    )}
-                    {record.sleep_data.wokeUpDuringSleep && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Woke Up During Sleep</label>
-                        <p className="text-foreground">Yes</p>
-                      </div>
-                    )}
-                    {record.sleep_data.wakeUpReason && (
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-1">Wake Up Reason</label>
-                        <p className="text-foreground">{record.sleep_data.wakeUpReason}</p>
-                      </div>
-                    )}
-                  </div>
-                  {record.sleep_data.notes && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.sleep_data.notes}</p>
+          ) : records.length === 0 ? (
+            <Card className="shadow-card border-border">
+              <CardContent className="p-12 text-center">
+                <div className="text-6xl mb-6">📝</div>
+                <h3 className="text-2xl font-bold text-foreground mb-3">
+                  TODAY'S RECORDS WILL APPEAR HERE WHEN SAVED
+                </h3>
+                <p className="text-muted-foreground text-lg">
+                  {formatDateInUserTimezone(todayDate)}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div ref={containerRef}>
+              <VirtualizedList
+                items={records}
+                estimatedItemHeight={isCompactView ? 600 : 800}
+                containerHeight={containerHeight}
+                overscan={1}
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+                isLoading={loading}
+                renderItem={(record) => (
+                  <Card key={record.id} className={`shadow-card border-border mb-4 ${isCompactView ? "compact-view" : ""}`}>
+                    <div className={`bg-primary/5 border-b border-primary/20 ${isCompactView ? "p-2" : "p-4"}`}>
+                      <p className={`font-medium text-foreground ${isCompactView ? "text-sm" : "text-base"}`}>
+                        <strong>Record Date:</strong> {formatDateInUserTimezone(record.record_date)}
+                      </p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Mood Record */}
-            {hasData(record.mood_data) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">😊</span> Mood
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {['morning', 'afternoon', 'evening']
-                      .filter((period) => record.mood_data[period]?.mood)
-                      .map((period) => (
-                        <div key={period} className="border rounded-lg p-3">
-                          <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">{period}</label>
-                          <p className="text-foreground font-semibold">{record.mood_data[period].mood}</p>
-                          {record.mood_data[period].notes && (
-                            <p className="text-sm text-muted-foreground mt-2">{record.mood_data[period].notes}</p>
-                          )}
+                    <CardContent className={isCompactView ? "p-3 space-y-3" : "p-6 space-y-6"}>
+                      {record.sleep_data && hasData(record.sleep_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Sleep Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Bedtime:</strong> {record.sleep_data.bedtime}</p>
+                            <p><strong>Wake Up:</strong> {record.sleep_data.wake_up}</p>
+                            <p><strong>Total Sleep:</strong> {record.sleep_data.total_sleep} hours</p>
+                            <p><strong>Quality:</strong> {record.sleep_data.quality}</p>
+                            <p><strong>Notes:</strong> {record.sleep_data.notes}</p>
+                          </div>
                         </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Nutrition Record */}
-            {hasData(record.nutrition_data) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">🍎</span> Nutrition
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {['breakfast', 'morningSnack', 'lunch', 'afternoonSnack', 'dinner', 'nightSnack'].map((meal) => {
-                      const mealData = record.nutrition_data[meal];
-                      if (!mealData || !mealData.quality) return null;
-                      
-                      const mealLabels: { [key: string]: string } = {
-                        breakfast: 'Breakfast',
-                        morningSnack: 'Morning Snack',
-                        lunch: 'Lunch',
-                        afternoonSnack: 'Afternoon Snack',
-                        dinner: 'Dinner',
-                        nightSnack: 'Night Snack'
-                      };
-                      
-                      return (
-                        <div key={meal} className="border rounded-lg p-3">
-                          <label className="block text-sm font-medium text-muted-foreground mb-2">{mealLabels[meal]}</label>
-                          <p className="text-foreground font-semibold mb-1">{mealData.quality}</p>
-                          {mealData.foods && mealData.foods.length > 0 && (
-                            <p className="text-xs text-muted-foreground mb-1">Categories: {mealData.foods.join(', ')}</p>
-                          )}
-                          {mealData.notes && (
-                            <p className="text-sm text-muted-foreground mt-1">{mealData.notes}</p>
-                          )}
+                      {record.mood_data && hasData(record.mood_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Mood Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Mood Level:</strong> {record.mood_data.mood_level}</p>
+                            <p><strong>Factors:</strong> {record.mood_data.factors}</p>
+                            <p><strong>Notes:</strong> {record.mood_data.notes}</p>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  {record.nutrition_data.waterIntake && (
-                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">Water Intake</label>
-                      <p className="text-foreground">{record.nutrition_data.waterIntake} ml</p>
-                    </div>
-                  )}
-                  {record.nutrition_data.generalNotes && (
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.nutrition_data.generalNotes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Medication Record */}
-            {record.medication_data && Object.keys(record.medication_data).some(key => 
-              Array.isArray(record.medication_data[key]) && record.medication_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">💊</span> Medication
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const meds = record.medication_data[period];
-                    if (!meds || meds.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {meds.map((med: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                {med.type && <div><span className="text-muted-foreground">Type:</span> {med.type}</div>}
-                                {med.name && <div><span className="text-muted-foreground">Name:</span> {med.name}</div>}
-                                {med.dosage && <div><span className="text-muted-foreground">Dosage:</span> {med.dosage}</div>}
-                                {med.time && <div><span className="text-muted-foreground">Time:</span> {med.time}</div>}
-                              </div>
-                              {med.sideEffects && (
-                                <p className="text-sm text-muted-foreground mt-2">Side effects: {med.sideEffects}</p>
-                              )}
-                            </div>
-                          ))}
+                      {record.nutrition_data && hasData(record.nutrition_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Nutrition Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Meals:</strong> {record.nutrition_data.meals}</p>
+                            <p><strong>Snacks:</strong> {record.nutrition_data.snacks}</p>
+                            <p><strong>Hydration:</strong> {record.nutrition_data.hydration}</p>
+                            <p><strong>Notes:</strong> {record.nutrition_data.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {record.medication_data.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.medication_data.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Activities Record */}
-            {record.activity_data && Object.keys(record.activity_data).some(key => 
-              Array.isArray(record.activity_data[key]) && record.activity_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">🎯</span> Activities & Therapies
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const activities = record.activity_data[period];
-                    if (!activities || activities.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {activities.map((activity: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-3 bg-muted/30">
-                              <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                                {activity.type && <div><span className="text-muted-foreground">Type:</span> {activity.type}</div>}
-                                {activity.name && <div><span className="text-muted-foreground">Activity:</span> {activity.name}</div>}
-                                {activity.duration && <div><span className="text-muted-foreground">Duration:</span> {activity.duration} min</div>}
-                                {activity.participation && <div><span className="text-muted-foreground">Participation:</span> {activity.participation}</div>}
-                              </div>
-                              {activity.skills && activity.skills.length > 0 && (
-                                <div className="text-sm mb-2">
-                                  <span className="text-muted-foreground">Skills practiced:</span> {activity.skills.join(', ')}
-                                </div>
-                              )}
-                              {activity.observations && (
-                                <p className="text-sm text-muted-foreground">{activity.observations}</p>
-                              )}
-                            </div>
-                          ))}
+                      {record.medication_data && hasData(record.medication_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Medication Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Medications:</strong> {record.medication_data.medications}</p>
+                            <p><strong>Dosage:</strong> {record.medication_data.dosage}</p>
+                            <p><strong>Time:</strong> {record.medication_data.time}</p>
+                            <p><strong>Notes:</strong> {record.medication_data.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {record.activity_data.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.activity_data.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Crisis Record */}
-            {record.crisis_data && Object.keys(record.crisis_data).some(key => 
-              Array.isArray(record.crisis_data[key]) && record.crisis_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">⚠️</span> Crisis Episodes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const crises = record.crisis_data[period];
-                    if (!crises || crises.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {crises.map((crisis: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-4 bg-destructive/5">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                {crisis.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{crisis.type}</span></div>}
-                                {crisis.customType && crisis.type === "Other Type" && <div><span className="text-sm text-muted-foreground">Custom Type:</span> <span className="text-foreground font-medium">{crisis.customType}</span></div>}
-                                {crisis.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{crisis.intensity}</span></div>}
-                                {crisis.duration && <div><span className="text-sm text-muted-foreground">Duration:</span> <span className="text-foreground font-medium">{crisis.duration} min</span></div>}
-                              </div>
-                              {crisis.triggers && crisis.triggers.length > 0 && (
-                                <div className="mb-2">
-                                  <span className="text-sm text-muted-foreground">Triggers:</span> <span className="text-foreground">{crisis.triggers.join(', ')}</span>
-                                  {crisis.customTrigger && crisis.triggers.includes("Other type") && (
-                                    <span className="text-foreground"> ({crisis.customTrigger})</span>
-                                  )}
-                                </div>
-                              )}
-                              {crisis.strategies && crisis.strategies.length > 0 && (
-                                <div className="mb-2">
-                                  <span className="text-sm text-muted-foreground">Calming strategies:</span> <span className="text-foreground">{crisis.strategies.join(', ')}</span>
-                                </div>
-                              )}
-                              {crisis.notes && (
-                                <p className="text-sm text-muted-foreground mt-2">{crisis.notes}</p>
-                              )}
-                            </div>
-                          ))}
+                      {record.activity_data && hasData(record.activity_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Activity Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Activity Type:</strong> {record.activity_data.activity_type}</p>
+                            <p><strong>Duration:</strong> {record.activity_data.duration} minutes</p>
+                            <p><strong>Intensity:</strong> {record.activity_data.intensity}</p>
+                            <p><strong>Notes:</strong> {record.activity_data.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {record.crisis_data.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.crisis_data.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Incident Record */}
-            {record.incident_data && Object.keys(record.incident_data).some(key => 
-              Array.isArray(record.incident_data[key]) && record.incident_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">📌</span> Unexpected Events
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const incidents = record.incident_data[period];
-                    if (!incidents || incidents.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {incidents.map((incident: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-4 bg-warning/5">
-                              <div className="grid grid-cols-2 gap-3 mb-3">
-                                {incident.type && <div><span className="text-sm text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{incident.type}</span></div>}
-                                {incident.customType && incident.type === "Other Type" && <div><span className="text-sm text-muted-foreground">Custom Type:</span> <span className="text-foreground font-medium">{incident.customType}</span></div>}
-                              </div>
-                              {incident.consequences && incident.consequences.length > 0 && (
-                                <div className="mb-2">
-                                  <span className="text-sm text-muted-foreground">Consequences:</span> <span className="text-foreground">{incident.consequences.join(', ')}</span>
-                                </div>
-                              )}
-                              {incident.notes && (
-                                <p className="text-sm text-muted-foreground mt-2">{incident.notes}</p>
-                              )}
-                            </div>
-                          ))}
+                      {record.crisis_data && hasData(record.crisis_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Crisis Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Triggers:</strong> {record.crisis_data.triggers}</p>
+                            <p><strong>Strategies:</strong> {record.crisis_data.strategies}</p>
+                            <p><strong>Outcome:</strong> {record.crisis_data.outcome}</p>
+                            <p><strong>Notes:</strong> {record.crisis_data.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {record.incident_data.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.incident_data.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Hyperfocus Record */}
-            {record.hyperfocus_data && Object.keys(record.hyperfocus_data).some(key => 
-              Array.isArray(record.hyperfocus_data[key]) && record.hyperfocus_data[key].length > 0
-            ) && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">🎯</span> Hyperfocus Episodes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {['morning', 'afternoon', 'evening'].map((period) => {
-                    const episodes = record.hyperfocus_data[period];
-                    if (!episodes || episodes.length === 0) return null;
-                    
-                    return (
-                      <div key={period} className="mb-6 last:mb-0">
-                        <h4 className="font-medium text-foreground mb-3 capitalize">{period}</h4>
-                        <div className="space-y-3">
-                          {episodes.map((episode: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-4 bg-accent/5">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                {episode.occurred && <div><span className="text-sm text-muted-foreground">Occurred:</span> <span className="text-foreground font-medium">{episode.occurred}</span></div>}
-                                {episode.topic && <div><span className="text-sm text-muted-foreground">Topic:</span> <span className="text-foreground font-medium">{episode.topic}</span></div>}
-                                {episode.intensity && <div><span className="text-sm text-muted-foreground">Intensity:</span> <span className="text-foreground font-medium">{episode.intensity}</span></div>}
-                                {episode.impact && <div><span className="text-sm text-muted-foreground">Impact:</span> <span className="text-foreground font-medium">{episode.impact}</span></div>}
-                              </div>
-                              {episode.notes && (
-                                <p className="text-sm text-muted-foreground mt-2">{episode.notes}</p>
-                              )}
-                            </div>
-                          ))}
+                      {record.incident_data && hasData(record.incident_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Incident Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Type:</strong> {record.incident_data.type}</p>
+                            <p><strong>Description:</strong> {record.incident_data.description}</p>
+                            <p><strong>Resolution:</strong> {record.incident_data.resolution}</p>
+                            <p><strong>Notes:</strong> {record.incident_data.notes}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {record.hyperfocus_data.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <label className="block text-sm font-medium text-muted-foreground mb-1">General Notes</label>
-                      <p className="text-foreground whitespace-pre-wrap">{record.hyperfocus_data.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                      )}
 
-            {/* Extra Notes */}
-            {record.extra_notes && (
-              <Card className="shadow-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <span className="mr-2">📝</span> Extra Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground whitespace-pre-wrap">{record.extra_notes}</p>
-                </CardContent>
-              </Card>
-            )}
-                </div>
-              )}
-            />
-          </div>
-        )}
+                      {record.hyperfocus_data && hasData(record.hyperfocus_data) && (
+                        <div className="mb-4">
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Hyperfocus Data</h4>
+                          <div className="text-muted-foreground">
+                            <p><strong>Topic:</strong> {record.hyperfocus_data.topic}</p>
+                            <p><strong>Duration:</strong> {record.hyperfocus_data.duration} minutes</p>
+                            <p><strong>Outcome:</strong> {record.hyperfocus_data.outcome}</p>
+                            <p><strong>Notes:</strong> {record.hyperfocus_data.notes}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {record.extra_notes && (
+                        <div>
+                          <h4 className={`text-lg font-semibold text-foreground ${isCompactView ? "text-base" : ""}`}>Extra Notes</h4>
+                          <div className="text-muted-foreground">
+                            {record.extra_notes}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
   );
 }

@@ -292,3 +292,26 @@ a:not([class*="button"]) {
     min-width: 48px;
   }
 }
+
+/* Compact view styles */
+.compact-view {
+  @apply transition-all duration-200;
+}
+
+.compact-view .space-y-6 {
+  @apply space-y-3;
+}
+
+.compact-view .space-y-3 {
+  @apply space-y-2;
+}
+
+.compact-view .space-y-2 {
+  @apply space-y-1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-view {
+    transition-duration: 0.01ms !important;
+  }
+}
