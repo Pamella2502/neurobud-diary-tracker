@@ -13,6 +13,7 @@ import CheckEmail from "./pages/CheckEmail";
 import EmailVerified from "./pages/EmailVerified";
 import ExpiredLink from "./pages/ExpiredLink";
 import TermsOnboarding from "./components/TermsOnboarding";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import type { Session } from "@supabase/supabase-js";
 
 // Component wrapper to use navigate hook
@@ -217,6 +218,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineIndicator />
         <BrowserRouter>
           <AppRoutes />
         </BrowserRouter>

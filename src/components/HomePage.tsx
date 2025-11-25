@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, FileText, TrendingUp, FileDown } from "lucide-react";
+import { PWAInstallPrompt } from "./PWAInstallPrompt";
 
 type HomePageProps = {
   childrenCount: number;
@@ -74,6 +75,11 @@ export function HomePage({ childrenCount }: HomePageProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* PWA Install Prompt */}
+        <div className="mt-6">
+          <PWAInstallPrompt />
+        </div>
 
         {/* Recent Activity */}
         <Card className="shadow-card border-border mt-6">
