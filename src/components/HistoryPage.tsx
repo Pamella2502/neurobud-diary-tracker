@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { VirtualizedList } from "./VirtualizedList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Loader2, Calendar as CalendarIcon, Clock } from "lucide-react";
 import type { Child } from "@/pages/Dashboard";
 import { getTodayInUserTimezone, formatDateInUserTimezone } from "@/lib/timezone";
@@ -40,8 +43,12 @@ const hasData = (obj: any): boolean => {
 
 export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryPageProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [records, setRecords] = useState<DailyRecord | null>(null);
+  const [records, setRecords] = useState<DailyRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
   const todayDate = getTodayInUserTimezone();
 
   useEffect(() => {
@@ -52,29 +59,48 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   }, []);
 
   useEffect(() => {
-    if (selectedChild) {
-      fetchTodayRecords();
-    }
-  }, [selectedChild]);
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const height = window.innerHeight - containerRef.current.offsetTop - 100;
+        setContainerHeight(Math.max(400, height));
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
-  const fetchTodayRecords = async () => {
+  const fetchRecords = useCallback(async () => {
     if (!selectedChild) return;
 
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("daily_records")
       .select("*")
       .eq("child_id", selectedChild.id)
-      .eq("record_date", todayDate)
-      .maybeSingle();
+      .order("record_date", { ascending: false });
+
+    if (startDate && endDate) {
+      query = query.gte("record_date", startDate).lte("record_date", endDate);
+    } else {
+      query = query.eq("record_date", todayDate);
+    }
+
+    const { data, error } = await query;
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching records:", error);
     } else {
-      setRecords(data || null);
+      setRecords((data as DailyRecord[]) || []);
     }
     setLoading(false);
-  };
+  }, [selectedChild, startDate, endDate, todayDate]);
+
+  useEffect(() => {
+    if (selectedChild) {
+      fetchRecords();
+    }
+  }, [selectedChild, fetchRecords]);
 
   if (!selectedChild) {
     return (
@@ -136,6 +162,16 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
           </CardContent>
         </Card>
 
+        <Card className="mb-6 border-border">
+          <CardContent className="p-4">
+            <div className="flex gap-4">
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start Date" />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End Date" />
+              <Button onClick={fetchRecords}>Apply</Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {loading ? (
           <Card className="shadow-card border-border">
             <CardContent className="p-8 text-center">
@@ -143,7 +179,7 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
               <p className="text-muted-foreground">Loading records...</p>
             </CardContent>
           </Card>
-        ) : !records ? (
+        ) : records.length === 0 ? (
           <Card className="shadow-card border-border">
             <CardContent className="p-12 text-center">
               <div className="text-6xl mb-6">📝</div>
@@ -156,7 +192,14 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div ref={containerRef}>
+            <VirtualizedList
+              items={records}
+              itemHeight={700}
+              containerHeight={containerHeight}
+              overscan={1}
+              renderItem={(record) => (
+                <div className="space-y-6 p-4">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
               <p className="text-sm text-foreground">
                 <strong>Viewing records for today:</strong> {formatDateInUserTimezone(todayDate)}
@@ -563,6 +606,9 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 </CardContent>
               </Card>
             )}
+                </div>
+              )}
+            />
           </div>
         )}
       </div>

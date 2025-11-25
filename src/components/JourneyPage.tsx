@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { VirtualizedList } from "./VirtualizedList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,14 +67,23 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
   const [endDate, setEndDate] = useState("");
   const [reports, setReports] = useState<CombinedDayReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
 
   useEffect(() => {
-    if (selectedChild) {
-      fetchReports();
-    }
-  }, [selectedChild]);
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const height = window.innerHeight - containerRef.current.offsetTop - 100;
+        setContainerHeight(Math.max(400, height));
+      }
+    };
+    
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     if (!selectedChild) return;
 
     setLoading(true);
@@ -123,23 +133,29 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedChild, startDate, endDate]);
 
-  const handleApplyFilter = () => {
+  useEffect(() => {
+    if (selectedChild) {
+      fetchReports();
+    }
+  }, [selectedChild, fetchReports]);
+
+  const handleApplyFilter = useCallback(() => {
     if (startDate && endDate && startDate > endDate) {
       toast.error('Start date cannot be greater than end date');
       return;
     }
     fetchReports();
-  };
+  }, [startDate, endDate, fetchReports]);
 
-  const handleExportPDF = (report: CombinedDayReport) => {
+  const handleExportPDF = useCallback((report: CombinedDayReport) => {
     toast.info('PDF export feature under development');
-  };
+  }, []);
 
-  const handleSendEmail = (report: CombinedDayReport) => {
+  const handleSendEmail = useCallback((report: CombinedDayReport) => {
     toast.info('Email sending feature under development');
-  };
+  }, []);
 
   const getEvolutionIcon = (status: string) => {
     switch (status) {
@@ -170,21 +186,21 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
   };
 
   // Generate trend data for line chart (multiple days)
-  const generateTrendData = () => {
+  const trendData = useMemo(() => {
     return reports.map(r => ({
       date: formatDateInUserTimezone(r.summary.summary_date).split(',')[0], // Short date
       score: r.summary.score,
     })).reverse(); // Chronological order
-  };
+  }, [reports]);
 
   // Calculate trend indicator for a specific metric
-  const getTrendIndicator = (current: number, previous: number | null) => {
+  const getTrendIndicator = useCallback((current: number, previous: number | null) => {
     if (previous === null || previous === undefined) return '➡';
     const diff = current - previous;
     if (diff > 5) return '⬆'; // Improved
     if (diff < -5) return '⬇'; // Worsened
     return '➡'; // Stable
-  };
+  }, []);
 
   if (!selectedChild) {
     return (
@@ -304,7 +320,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={generateTrendData()}>
+                    <LineChart data={trendData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis domain={[0, 100]} />
@@ -323,7 +339,13 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
               </Card>
             )}
 
-            {reports.map((report, reportIndex) => {
+            <div ref={containerRef}>
+              <VirtualizedList
+                items={reports}
+                itemHeight={800}
+                containerHeight={containerHeight}
+                overscan={2}
+                renderItem={(report, reportIndex) => {
               const { summary, record } = report;
               const previousReport = reportIndex < reports.length - 1 ? reports[reportIndex + 1] : null;
 
@@ -839,7 +861,9 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
                   </CardContent>
                 </Card>
               );
-            })}
+            }}
+              />
+            </div>
           </div>
         )}
       </div>
