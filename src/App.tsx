@@ -14,6 +14,7 @@ import EmailVerified from "./pages/EmailVerified";
 import ExpiredLink from "./pages/ExpiredLink";
 import TermsOnboarding from "./components/TermsOnboarding";
 import { OfflineIndicator } from "./components/OfflineIndicator";
+import { usePWAUpdate } from "./hooks/usePWAUpdate";
 import type { Session } from "@supabase/supabase-js";
 
 // Component wrapper to use navigate hook
@@ -22,6 +23,9 @@ const AppRoutes = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Initialize PWA update handling
+  usePWAUpdate();
 
   // Detect verification errors from URL hash
   useEffect(() => {

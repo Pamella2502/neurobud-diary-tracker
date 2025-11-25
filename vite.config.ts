@@ -21,11 +21,12 @@ export default defineConfig(({ mode }) => ({
         short_name: 'NeuroBud',
         description: 'Track your child\'s daily progress with NeuroBud. Comprehensive autism diary for monitoring sleep, mood, nutrition, and development patterns.',
         theme_color: '#8B5CF6',
-        background_color: '#ffffff',
+        background_color: '#0F0F1A',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        categories: ['health', 'medical', 'lifestyle'],
         icons: [
           {
             src: '/pwa-192x192.png',
@@ -57,18 +58,22 @@ export default defineConfig(({ mode }) => ({
             src: '/screenshot-wide.png',
             sizes: '1280x720',
             type: 'image/png',
-            form_factor: 'wide'
+            form_factor: 'wide',
+            label: 'NeuroBud Dashboard'
           },
           {
             src: '/screenshot-narrow.png',
             sizes: '750x1334',
             type: 'image/png',
-            form_factor: 'narrow'
+            form_factor: 'narrow',
+            label: 'NeuroBud Mobile View'
           }
         ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -103,6 +108,7 @@ export default defineConfig(({ mode }) => ({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-cache',
+              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 5 // 5 minutes
