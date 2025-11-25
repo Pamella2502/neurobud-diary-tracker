@@ -231,11 +231,11 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {['morning', 'afternoon', 'evening']
-                      .filter((period) => records.mood_data[period])
+                      .filter((period) => records.mood_data[period]?.mood)
                       .map((period) => (
                         <div key={period} className="border rounded-lg p-3">
                           <label className="block text-sm font-medium text-muted-foreground mb-2 capitalize">{period}</label>
-                          <p className="text-foreground font-semibold">{records.mood_data[period].mood || "Not recorded"}</p>
+                          <p className="text-foreground font-semibold">{records.mood_data[period].mood}</p>
                           {records.mood_data[period].notes && (
                             <p className="text-sm text-muted-foreground mt-2">{records.mood_data[period].notes}</p>
                           )}
