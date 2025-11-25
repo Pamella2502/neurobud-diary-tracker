@@ -67,8 +67,11 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
   const [endDate, setEndDate] = useState("");
   const [reports, setReports] = useState<CombinedDayReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const updateHeight = () => {
@@ -83,27 +86,23 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     if (!selectedChild) return;
 
     setLoading(true);
     try {
       let summaryQuery = supabase
         .from('daily_summary')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('child_id', selectedChild.id)
-        .order('summary_date', { ascending: false });
+        .order('summary_date', { ascending: false })
+        .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
       if (startDate && endDate) {
         summaryQuery = summaryQuery.gte('summary_date', startDate).lte('summary_date', endDate);
-      } else {
-        // Default: last 7 days
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        summaryQuery = summaryQuery.gte('summary_date', sevenDaysAgo.toISOString().split('T')[0]);
       }
 
-      const { data: summaries, error: summaryError } = await summaryQuery;
+      const { data: summaries, error: summaryError, count } = await summaryQuery;
 
       if (summaryError) throw summaryError;
 
@@ -126,20 +125,31 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
         })
       );
 
-      setReports(combinedReports);
+      setReports(prev => append ? [...prev, ...combinedReports] : combinedReports);
+      setHasMore(count ? (pageNum + 1) * PAGE_SIZE < count : false);
+      setPage(pageNum);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Error loading reports');
     } finally {
       setLoading(false);
     }
-  }, [selectedChild, startDate, endDate]);
+  }, [selectedChild, startDate, endDate, PAGE_SIZE]);
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      fetchReports(page + 1, true);
+    }
+  }, [loading, hasMore, page, fetchReports]);
 
   useEffect(() => {
     if (selectedChild) {
-      fetchReports();
+      setPage(0);
+      setReports([]);
+      setHasMore(true);
+      fetchReports(0, false);
     }
-  }, [selectedChild, fetchReports]);
+  }, [selectedChild, startDate, endDate]);
 
   const handleApplyFilter = useCallback(() => {
     if (startDate && endDate && startDate > endDate) {
@@ -342,9 +352,12 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
             <div ref={containerRef}>
               <VirtualizedList
                 items={reports}
-                itemHeight={800}
+                estimatedItemHeight={900}
                 containerHeight={containerHeight}
-                overscan={2}
+                overscan={1}
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+                isLoading={loading && reports.length > 0}
                 renderItem={(report, reportIndex) => {
               const { summary, record } = report;
               const previousReport = reportIndex < reports.length - 1 ? reports[reportIndex + 1] : null;

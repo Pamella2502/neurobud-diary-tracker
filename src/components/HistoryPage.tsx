@@ -47,9 +47,12 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
   const todayDate = getTodayInUserTimezone();
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -70,37 +73,48 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
-  const fetchRecords = useCallback(async () => {
+  const fetchRecords = useCallback(async (pageNum: number = 0, append: boolean = false) => {
     if (!selectedChild) return;
 
     setLoading(true);
     let query = supabase
       .from("daily_records")
-      .select("*")
+      .select("*", { count: 'exact' })
       .eq("child_id", selectedChild.id)
-      .order("record_date", { ascending: false });
+      .order("record_date", { ascending: false })
+      .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
     if (startDate && endDate) {
       query = query.gte("record_date", startDate).lte("record_date", endDate);
-    } else {
-      query = query.eq("record_date", todayDate);
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching records:", error);
     } else {
-      setRecords((data as DailyRecord[]) || []);
+      const newRecords = (data as DailyRecord[]) || [];
+      setRecords(prev => append ? [...prev, ...newRecords] : newRecords);
+      setHasMore(count ? (pageNum + 1) * PAGE_SIZE < count : false);
+      setPage(pageNum);
     }
     setLoading(false);
-  }, [selectedChild, startDate, endDate, todayDate]);
+  }, [selectedChild, startDate, endDate, PAGE_SIZE]);
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      fetchRecords(page + 1, true);
+    }
+  }, [loading, hasMore, page, fetchRecords]);
 
   useEffect(() => {
     if (selectedChild) {
-      fetchRecords();
+      setPage(0);
+      setRecords([]);
+      setHasMore(true);
+      fetchRecords(0, false);
     }
-  }, [selectedChild, fetchRecords]);
+  }, [selectedChild, startDate, endDate]);
 
   if (!selectedChild) {
     return (
@@ -167,7 +181,12 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
             <div className="flex gap-4">
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start Date" />
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End Date" />
-              <Button onClick={fetchRecords}>Apply</Button>
+              <Button onClick={() => {
+                setPage(0);
+                setRecords([]);
+                setHasMore(true);
+                fetchRecords(0, false);
+              }}>Apply</Button>
             </div>
           </CardContent>
         </Card>
@@ -195,9 +214,12 @@ export function HistoryPage({ children, selectedChild, onSelectChild }: HistoryP
           <div ref={containerRef}>
             <VirtualizedList
               items={records}
-              itemHeight={700}
+              estimatedItemHeight={800}
               containerHeight={containerHeight}
               overscan={1}
+              onLoadMore={loadMore}
+              hasMore={hasMore}
+              isLoading={loading}
               renderItem={(record) => (
                 <div className="space-y-6 p-4">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
