@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { VirtualizedList } from "./VirtualizedList";
+import { BackToTop } from "./BackToTop";
+import { SkeletonCard } from "./SkeletonCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -226,6 +228,7 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
 
   return (
     <div className="p-6 md:p-8">
+      <BackToTop />
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -302,11 +305,19 @@ export function JourneyPage({ children, selectedChild, onSelectChild }: JourneyP
         </Card>
 
         {/* Reports List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading reports...</p>
+        {loading && reports.length === 0 ? (
+          <div 
+            className="space-y-6"
+            role="status"
+            aria-busy="true"
+            aria-live="polite"
+          >
+            <span className="sr-only">Loading reports...</span>
+            {[1, 2].map((i) => (
+              <SkeletonCard key={i} variant="report" />
+            ))}
           </div>
-        ) : reports.length === 0 ? (
+        ) : reports.length === 0 && !loading ? (
           <Card className="shadow-card border-border">
             <CardContent className="p-6">
               <div className="text-center py-12">
