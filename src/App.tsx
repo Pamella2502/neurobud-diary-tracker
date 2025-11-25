@@ -1,23 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import CheckEmail from "./pages/CheckEmail";
-import EmailVerified from "./pages/EmailVerified";
-import ExpiredLink from "./pages/ExpiredLink";
-import TermsOnboarding from "./components/TermsOnboarding";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { SkipToContent } from "./components/SkipToContent";
 import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import { usePWAUpdate } from "./hooks/usePWAUpdate";
 import type { Session } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
+
+// Lazy load pages for code splitting
+const Landing = lazy(() => import("./pages/Landing"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CheckEmail = lazy(() => import("./pages/CheckEmail"));
+const EmailVerified = lazy(() => import("./pages/EmailVerified"));
+const ExpiredLink = lazy(() => import("./pages/ExpiredLink"));
+const TermsOnboarding = lazy(() => import("./components/TermsOnboarding"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex h-screen items-center justify-center bg-background">
+    <Loader2 className="w-12 h-12 animate-spin text-primary" />
+  </div>
+);
 
 // Component wrapper to use navigate hook
 const AppRoutes = () => {
@@ -175,48 +185,40 @@ const AppRoutes = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading NeuroBud...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   // Check if user needs to accept terms
   if (session && userProfile && !userProfile.agreed_to_terms) {
-    return <TermsOnboarding userId={session.user.id} />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <TermsOnboarding userId={session.user.id} />
+      </Suspense>
+    );
   }
 
   return (
     <>
       <SkipToContent />
       {loading ? (
-        <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center">
-          <div className="text-center">
-            <div 
-              className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"
-              role="status"
-              aria-label="Loading application"
-            ></div>
-            <p className="text-muted-foreground">Loading NeuroBud...</p>
-          </div>
-        </div>
+        <PageLoader />
       ) : session && userProfile && !userProfile.agreed_to_terms ? (
-        <TermsOnboarding userId={session.user.id} />
+        <Suspense fallback={<PageLoader />}>
+          <TermsOnboarding userId={session.user.id} />
+        </Suspense>
       ) : (
         <main id="main-content" role="main">
-          <Routes>
-            <Route path="/" element={session ? <Navigate to="/dashboard" /> : <Landing />} />
-            <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
-            <Route path="/check-email" element={<CheckEmail />} />
-            <Route path="/email-verified" element={<EmailVerified />} />
-            <Route path="/expired-link" element={<ExpiredLink />} />
-            <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={session ? <Navigate to="/dashboard" /> : <Landing />} />
+              <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <Auth />} />
+              <Route path="/check-email" element={<CheckEmail />} />
+              <Route path="/email-verified" element={<EmailVerified />} />
+              <Route path="/expired-link" element={<ExpiredLink />} />
+              <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/auth" />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
       )}
     </>

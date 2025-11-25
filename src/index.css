@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Performance optimizations */
+@layer base {
+  /* Enable GPU acceleration for animations */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Optimize animations with will-change */
+  [class*="animate-"],
+  [class*="transition-"] {
+    will-change: transform, opacity;
+  }
+  
+  /* Contain layout for better performance */
+  main, section, article {
+    contain: layout style paint;
+  }
+  
+  /* Optimize images */
+  img {
+    content-visibility: auto;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

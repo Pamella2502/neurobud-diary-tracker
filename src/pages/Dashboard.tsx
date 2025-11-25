@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
@@ -21,7 +21,7 @@ export type Child = {
   updated_at: string;
 };
 
-export default function Dashboard() {
+const Dashboard = memo(function Dashboard() {
   const [activeTab, setActiveTab] = useState("home");
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
@@ -40,7 +40,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchChildren = async () => {
+  const fetchChildren = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -59,11 +59,11 @@ export default function Dashboard() {
       }
     }
     setLoading(false);
-  };
+  }, []);
 
-  const handleChildAdded = () => {
+  const handleChildAdded = useCallback(() => {
     fetchChildren();
-  };
+  }, [fetchChildren]);
 
   const renderContent = () => {
     if (loading) {
@@ -111,4 +111,6 @@ export default function Dashboard() {
       <main className="flex-1 overflow-auto">{renderContent()}</main>
     </div>
   );
-}
+});
+
+export default Dashboard;
