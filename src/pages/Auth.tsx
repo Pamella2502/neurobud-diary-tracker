@@ -145,20 +145,24 @@ export default function Auth() {
 
   const TermsModal = () => (
     <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        aria-labelledby="terms-modal-title"
+        aria-describedby="terms-modal-description"
+      >
         <DialogHeader>
-          <DialogTitle>Terms & Privacy Policy</DialogTitle>
+          <DialogTitle id="terms-modal-title">Terms & Privacy Policy</DialogTitle>
         </DialogHeader>
 
-        <div className="prose prose-sm max-w-none">
-          <Alert className="mb-6">
+        <div className="prose prose-sm max-w-none" id="terms-modal-description">
+          <Alert className="mb-6" role="note">
             <AlertDescription>
               <strong>Important:</strong> By creating an account, you agree to our Terms of Service and Privacy Policy.
               Please read carefully before proceeding.
             </AlertDescription>
           </Alert>
 
-          <h3>📄 Terms of Service</h3>
+          <h2>📄 Terms of Service</h2>
           <p>
             <strong>Last Updated:</strong> {new Date().toLocaleDateString()}
           </p>
@@ -242,13 +246,17 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center shadow-card">
-            <span className="text-white font-bold text-2xl">N</span>
+          <div 
+            className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center shadow-card"
+            role="img"
+            aria-label="NeuroBud application logo"
+          >
+            <span className="text-white font-bold text-2xl" aria-hidden="true">N</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-foreground">
+        <h1 className="mt-6 text-center text-3xl font-bold text-foreground">
           {isForgotPassword ? "Reset password" : isLogin ? "Welcome back" : "Create your account"}
-        </h2>
+        </h1>
         <p className="mt-2 text-center text-muted-foreground">
           {isForgotPassword ? "Enter your email to receive the reset link" : isLogin ? "Sign in to continue tracking" : "Start your 3-day free trial"}
         </p>
@@ -256,40 +264,63 @@ export default function Auth() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-card py-8 px-4 shadow-card sm:rounded-2xl sm:px-10 border border-border">
-          <form className="space-y-6" onSubmit={isForgotPassword ? handleForgotPassword : handleAuth}>
+          <form 
+            className="space-y-6" 
+            onSubmit={isForgotPassword ? handleForgotPassword : handleAuth}
+            aria-label={isForgotPassword ? "Password reset form" : isLogin ? "Sign in form" : "Sign up form"}
+          >
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">
+                Email address
+                <span className="sr-only">(required)</span>
+              </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 required
                 className="mt-1"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-describedby={email.length > 0 && !email.includes('@') ? 'email-error' : undefined}
               />
+              {email.length > 0 && !email.includes('@') && (
+                <p id="email-error" className="text-sm text-destructive mt-1" role="alert">
+                  Please enter a valid email address
+                </p>
+              )}
             </div>
 
             {!isForgotPassword && (
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  Password
+                  <span className="sr-only">(required, minimum 6 characters)</span>
+                </Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   required
                   minLength={6}
                   className="mt-1"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password (min. 6 characters)"
+                  aria-describedby="password-requirements"
                 />
+                <p id="password-requirements" className="text-sm text-muted-foreground mt-1">
+                  {!isLogin && "Minimum 6 characters required"}
+                </p>
                 {isLogin && (
                   <div className="mt-2 text-right">
                     <button
                       type="button"
                       onClick={() => setIsForgotPassword(true)}
-                      className="text-sm text-primary hover:text-primary-hover underline"
+                      className="text-sm text-primary hover:text-primary-hover underline min-h-0"
+                      aria-label="Forgot your password? Click to reset it"
                     >
                       Forgot password?
                     </button>
@@ -309,13 +340,14 @@ export default function Auth() {
                     readOnly
                     className="mt-1 bg-muted cursor-not-allowed"
                     value={timezone}
+                    aria-describedby="timezone-description"
                   />
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p id="timezone-description" className="mt-1 text-sm text-muted-foreground">
                     Detected automatically. This ensures accurate daily record tracking.
                   </p>
                 </div>
 
-                <Alert className="border-accent/20 bg-accent/10">
+                <Alert className="border-accent/20 bg-accent/10" role="region" aria-label="Terms and privacy policy agreement">
                   <AlertDescription>
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -323,17 +355,20 @@ export default function Auth() {
                         checked={agreedToTerms}
                         onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                         className="mt-1"
+                        aria-required="true"
+                        aria-describedby="terms-description"
                       />
                       <label htmlFor="agree-terms" className="block text-sm text-foreground cursor-pointer">
                         <span className="font-semibold">I HAVE READ AND AGREE TO THE TERMS & PRIVACY POLICY</span>
                         <button
                           type="button"
                           onClick={() => setShowTermsModal(true)}
-                          className="ml-1 text-primary hover:text-primary-hover underline"
+                          className="ml-1 text-primary hover:text-primary-hover underline min-h-0"
+                          aria-label="Click to read full terms and privacy policy"
                         >
                           (click to read)
                         </button>
-                        <p className="text-destructive text-xs mt-1 font-semibold">
+                        <p id="terms-description" className="text-destructive text-xs mt-1 font-semibold">
                           ✓ Required to create account - This protects both you and us legally
                         </p>
                       </label>
@@ -341,7 +376,7 @@ export default function Auth() {
                   </AlertDescription>
                 </Alert>
 
-                <Alert variant="destructive">
+                <Alert variant="destructive" role="note">
                   <AlertDescription className="text-xs">
                     <strong>Legal Acknowledgement:</strong> By checking this box, you confirm you have read,
                     understood, and voluntarily agree to be bound by all terms and conditions. This constitutes a
@@ -351,8 +386,14 @@ export default function Auth() {
               </>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading || (!isLogin && !isForgotPassword && !agreedToTerms)}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || (!isLogin && !isForgotPassword && !agreedToTerms)}
+              aria-label={loading ? "Processing, please wait" : (isForgotPassword ? "Send password reset link" : isLogin ? "Sign in to your account" : "Create your account")}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+              {loading && <span className="sr-only">Processing...</span>}
               {isForgotPassword ? "Send reset link" : isLogin ? "Sign in" : "Create account"}
             </Button>
           </form>
@@ -361,7 +402,7 @@ export default function Auth() {
             <>
               <div className="mt-6">
                 <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
                     <div className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-sm">
@@ -374,8 +415,9 @@ export default function Auth() {
                   variant="outline"
                   className="w-full mt-4"
                   onClick={handleGoogleSignIn}
+                  aria-label="Sign in with your Google account"
                 >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       fill="currentColor"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -399,31 +441,39 @@ export default function Auth() {
             </>
           )}
 
-          <div className="mt-6 text-center">
-            {isForgotPassword ? (
-              <button
-                type="button"
-                onClick={() => setIsForgotPassword(false)}
-                className="text-primary hover:text-primary-hover font-medium transition-colors"
-              >
-                Back to login
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:text-primary-hover font-medium transition-colors"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            )}
-          </div>
+          <nav className="mt-6 space-y-2" aria-label="Authentication options">
+            <div className="text-center">
+              {isForgotPassword ? (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="text-primary hover:text-primary-hover font-medium transition-colors min-h-0"
+                  aria-label="Go back to login page"
+                >
+                  Back to login
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-primary hover:text-primary-hover font-medium transition-colors min-h-0"
+                  aria-label={isLogin ? "Don't have an account? Go to sign up page" : "Already have an account? Go to sign in page"}
+                >
+                  {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                </button>
+              )}
+            </div>
 
-          <div className="mt-4 text-center">
-            <Button variant="ghost" onClick={() => navigate("/")}>
-              ← Back to Home
-            </Button>
-          </div>
+            <div className="text-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/")}
+                aria-label="Go back to home page"
+              >
+                ← Back to Home
+              </Button>
+            </div>
+          </nav>
         </div>
       </div>
 
