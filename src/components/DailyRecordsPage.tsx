@@ -1388,7 +1388,13 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                             <Label>Triggers</Label>
                             <div className="space-y-4 mt-2">
                               {Object.entries(triggerCategories).map(([categoryKey, category]) => {
-                                const isCategorySelected = crisis.triggers?.some((t) => t.startsWith(`${categoryKey}:`)) || false;
+                                // Check if this category is selected
+                                const categoryTriggers = crisis.triggers || [];
+                                const isCategorySelected = categoryTriggers.some((t) => 
+                                  typeof t === 'string' && t.startsWith(`${categoryKey}:`)
+                                );
+                                
+                                console.log('Category:', categoryKey, 'Selected:', isCategorySelected, 'Triggers:', categoryTriggers);
                                 
                                 return (
                                   <div key={categoryKey} className="space-y-2">
@@ -1398,12 +1404,18 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                                         checked={isCategorySelected}
                                         onCheckedChange={(checked) => {
                                           const currentTriggers = crisis.triggers || [];
+                                          console.log('Checkbox changed:', categoryKey, checked, currentTriggers);
                                           if (checked) {
-                                            // Add category marker if not present
-                                            updateCrisis(period, index, "triggers", [...currentTriggers, `${categoryKey}:`]);
+                                            // Add category marker
+                                            const newTriggers = [...currentTriggers, `${categoryKey}:`];
+                                            console.log('Adding category, new triggers:', newTriggers);
+                                            updateCrisis(period, index, "triggers", newTriggers);
                                           } else {
                                             // Remove all triggers from this category
-                                            const newTriggers = currentTriggers.filter((t) => !t.startsWith(`${categoryKey}:`));
+                                            const newTriggers = currentTriggers.filter((t) => 
+                                              typeof t === 'string' && !t.startsWith(`${categoryKey}:`)
+                                            );
+                                            console.log('Removing category, new triggers:', newTriggers);
                                             updateCrisis(period, index, "triggers", newTriggers);
                                           }
                                         }}
@@ -1420,24 +1432,32 @@ export function DailyRecordsPage({ children, selectedChild, onSelectChild }: Dai
                                       <div className="ml-6 space-y-2 border-l-2 border-border pl-4">
                                         {category.subOptions.map((subOption) => {
                                           const triggerValue = `${categoryKey}:${subOption}`;
+                                          const isSubOptionChecked = categoryTriggers.includes(triggerValue);
                                           return (
                                             <div key={subOption} className="flex items-center space-x-2">
                                               <Checkbox
                                                 id={`${period}-crisis-${index}-trigger-${categoryKey}-${subOption}`}
-                                                checked={crisis.triggers?.includes(triggerValue) || false}
+                                                checked={isSubOptionChecked}
                                                 onCheckedChange={(checked) => {
                                                   const currentTriggers = crisis.triggers || [];
                                                   const categoryMarker = `${categoryKey}:`;
-                                                  const newTriggers = checked
-                                                    ? [...currentTriggers, triggerValue]
-                                                    : currentTriggers.filter((t) => t !== triggerValue);
+                                                  let newTriggers;
+                                                  
+                                                  if (checked) {
+                                                    newTriggers = [...currentTriggers, triggerValue];
+                                                  } else {
+                                                    newTriggers = currentTriggers.filter((t) => t !== triggerValue);
+                                                  }
                                                   
                                                   // Ensure category marker exists if we have sub-options selected
-                                                  const hasSubOptions = newTriggers.some((t) => t.startsWith(categoryKey) && t !== categoryMarker);
+                                                  const hasSubOptions = newTriggers.some((t) => 
+                                                    typeof t === 'string' && t.startsWith(`${categoryKey}:`) && t !== categoryMarker
+                                                  );
                                                   if (hasSubOptions && !newTriggers.includes(categoryMarker)) {
                                                     newTriggers.push(categoryMarker);
                                                   }
                                                   
+                                                  console.log('Sub-option changed:', subOption, checked, newTriggers);
                                                   updateCrisis(period, index, "triggers", newTriggers);
                                                 }}
                                               />
